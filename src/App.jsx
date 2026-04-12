@@ -1,442 +1,269 @@
 import React, { useState } from 'react';
-import { 
-  ChefHat, Utensils, ShoppingBasket, Flame, Clock, 
-  AlertCircle, Loader2, ListChecks, MessageSquare, 
-  RefreshCcw, Plus, Trash2, Globe, Sparkles, Zap, Edit3, Undo2,
-  ShieldCheck, XCircle, Info, Settings2, Users, Baby, LayoutGrid
+import {
+  Baby, ChefHat, Clock, Flame, LayoutGrid, Loader2, Monitor,
+  Plus, RefreshCcw, Settings2, ShieldCheck, Smartphone, Sparkles,
+  Trash2, Undo2, Users, XCircle
 } from 'lucide-react';
 
-const PROTEIN_OPTIONS = [
-  "Pork (Pork Belly, Sliced Pork)",
-  "Chicken (Thighs, Breast, Wings)",
-  "Beef (Flank, Sirloin, Short Ribs)",
-  "Tofu (Firm, Soft, Silken)",
-  "Fish (Whole, Fillets)",
-  "Shrimp / Prawns",
-  "Duck",
-  "Eggs",
-  "Scallops",
-  "Lamb",
-  "CUSTOM_VAL"
-];
+const PROTEIN_OPTIONS = ['Pork (Pork Belly, Sliced Pork)', 'Chicken (Thighs, Breast, Wings)', 'Beef (Flank, Sirloin, Short Ribs)', 'Tofu (Firm, Soft, Silken)', 'Fish (Whole, Fillets)', 'Shrimp / Prawns', 'Duck', 'Eggs', 'Scallops', 'Lamb', 'CUSTOM_VAL'];
+const FIBER_OPTIONS = ['Bok Choy', 'Gai Lan (Chinese Broccoli)', 'Cabbage (Napa or Green)', 'Eggplant', 'Mushrooms (Shiitake, Enoki, Oyster)', 'Green Beans', 'Snow Peas', 'Bell Peppers', 'Lotus Root', 'Potato', 'Cucumber', 'CUSTOM_VAL'];
+const LOCATIONS = [{ value: 'supermarket', label: 'Supermarket' }, { value: 'wet market', label: 'Wet Market' }];
+const DIFFICULTIES = [{ value: 'Very Easy', label: 'Very Easy (Fusion/Western only)' }, { value: 'Easy', label: 'Easy' }, { value: 'Medium', label: 'Medium' }, { value: 'Hard', label: 'Hard' }];
 
-const FIBER_OPTIONS = [
-  "Bok Choy",
-  "Gai Lan (Chinese Broccoli)",
-  "Cabbage (Napa or Green)",
-  "Eggplant",
-  "Mushrooms (Shiitake, Enoki, Oyster)",
-  "Green Beans",
-  "Snow Peas",
-  "Bell Peppers",
-  "Lotus Root",
-  "Potato",
-  "Cucumber",
-  "CUSTOM_VAL"
-];
+const card = 'rounded-[2rem] border border-stone-100 bg-white p-5 shadow-sm';
 
-const LOCATIONS = [
-  { value: "supermarket", label: "Supermarket" },
-  { value: "wet market", label: "Wet Market" }
-];
-
-const DIFFICULTIES = [
-  { value: "Very Easy", label: "Very Easy (Fusion/Western only)", note: "No-cook or 1-pan assembly" },
-  { value: "Easy", label: "Easy", note: "Simple stir-fry or sear" },
-  { value: "Medium", label: "Medium", note: "Standard prep & marinating" },
-  { value: "Hard", label: "Hard", note: "Complex techniques & braising" }
-];
+function Section({ title, icon: Icon, children }) {
+  return (
+    <section className={card}>
+      <div className="mb-5 flex items-center gap-2">
+        <div className="rounded-2xl bg-stone-100 p-2 text-indigo-900"><Icon size={16} /></div>
+        <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-stone-500">{title}</h3>
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export default function App() {
+  const [layoutMode, setLayoutMode] = useState(typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop');
   const [activeTab, setActiveTab] = useState('menu');
   const [dishCount, setDishCount] = useState(3);
   const [dinerCount, setDinerCount] = useState(3);
   const [isToddlerFriendly, setIsToddlerFriendly] = useState(false);
-  const [styleWeight, setStyleWeight] = useState(0); 
-  const [proteins, setProteins] = useState([{ value: PROTEIN_OPTIONS[0], customText: "" }]);
-  const [fibers, setFibers] = useState([{ value: FIBER_OPTIONS[0], customText: "" }]);
+  const [styleWeight, setStyleWeight] = useState(0);
+  const [proteins, setProteins] = useState([{ value: PROTEIN_OPTIONS[0], customText: '' }]);
+  const [fibers, setFibers] = useState([{ value: FIBER_OPTIONS[0], customText: '' }]);
   const [location, setLocation] = useState(LOCATIONS[0].value);
   const [difficulty, setDifficulty] = useState(DIFFICULTIES[1].value);
-
   const [standardRules, setStandardRules] = useState([
     { id: 'no-spicy', label: 'No Spicy Food', active: true, description: 'Chef will avoid all chili and heat.' },
     { id: 'one-veg', label: '1x Strictly Vegetarian', active: true, description: 'Exactly one dish must be meat-free.' }
   ]);
   const [customRules, setCustomRules] = useState([]);
-  const [newRuleInput, setNewRuleInput] = useState("");
-
+  const [newRuleInput, setNewRuleInput] = useState('');
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [followUpComment, setFollowUpComment] = useState("");
+  const [error, setError] = useState('');
+  const [followUpComment, setFollowUpComment] = useState('');
 
-  const toggleStandardRule = (id) => {
-    setStandardRules(prev => prev.map(r => r.id === id ? { ...r, active: !r.active } : r));
-  };
+  const isMobileLayout = layoutMode === 'mobile';
+  const trackClass = 'w-full cursor-pointer accent-indigo-600';
 
+  const toggleStandardRule = (id) => setStandardRules((prev) => prev.map((rule) => (rule.id === id ? { ...rule, active: !rule.active } : rule)));
   const addCustomRule = () => {
     if (!newRuleInput.trim()) return;
     setCustomRules([...customRules, { id: Date.now(), text: newRuleInput.trim() }]);
-    setNewRuleInput("");
+    setNewRuleInput('');
   };
-
-  const removeCustomRule = (id) => {
-    setCustomRules(customRules.filter(r => r.id !== id));
-  };
-
+  const removeCustomRule = (id) => setCustomRules(customRules.filter((rule) => rule.id !== id));
   const addIngredient = (type) => {
-    const newItem = { value: type === 'protein' ? PROTEIN_OPTIONS[0] : FIBER_OPTIONS[0], customText: "" };
-    if (type === 'protein' && proteins.length < 4) setProteins([...proteins, newItem]);
-    else if (type === 'fiber' && fibers.length < 4) setFibers([...fibers, newItem]);
+    const entry = { value: type === 'protein' ? PROTEIN_OPTIONS[0] : FIBER_OPTIONS[0], customText: '' };
+    if (type === 'protein' && proteins.length < 4) setProteins([...proteins, entry]);
+    if (type === 'fiber' && fibers.length < 4) setFibers([...fibers, entry]);
   };
-
   const removeIngredient = (type, index) => {
     if (type === 'protein' && proteins.length > 1) setProteins(proteins.filter((_, i) => i !== index));
-    else if (type === 'fiber' && fibers.length > 1) setFibers(fibers.filter((_, i) => i !== index));
+    if (type === 'fiber' && fibers.length > 1) setFibers(fibers.filter((_, i) => i !== index));
   };
-
   const updateIngredient = (type, index, field, value) => {
     const target = type === 'protein' ? proteins : fibers;
     const setter = type === 'protein' ? setProteins : setFibers;
-    const newArr = [...target];
-    newArr[index][field] = value;
-    setter(newArr);
+    const next = [...target];
+    next[index][field] = value;
+    setter(next);
   };
 
-  const getStyleLabel = (val) => {
-    if (val < -60) return "Authentic Chinese";
-    if (val < -20) return "Chinese-leaning Fusion";
-    if (val <= 20) return "Global Fusion";
-    if (val <= 60) return "Western-leaning Fusion";
-    return "Modern Western Style";
+  const getStyleLabel = (value) => {
+    if (value < -60) return 'Authentic Chinese';
+    if (value < -20) return 'Chinese-leaning Fusion';
+    if (value <= 20) return 'Global Fusion';
+    if (value <= 60) return 'Western-leaning Fusion';
+    return 'Modern Western Style';
   };
 
   const generateRecipes = async (isRefinement = false) => {
     setLoading(true);
-    setError("");
-    
-    const apiKey = ""; 
+    setError('');
+    const apiKey = '';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-
-    const activeRules = [
-      ...standardRules.filter(r => r.active).map(r => r.label),
-      ...customRules.map(r => r.text)
-    ];
-
-    const finalProteins = proteins.map(p => p.value === "CUSTOM_VAL" ? p.customText : p.value).filter(v => v);
-    const finalFibers = fibers.map(f => f.value === "CUSTOM_VAL" ? f.customText : f.value).filter(v => v);
-
-    let prompt = "";
-    const toddlerInstruction = isToddlerFriendly ? "Include a 'toddlerAdaptation' string for each dish (how to prep portions for a toddler: reducing seasoning, cutting size, or setting aside before spicy/salty sauces)." : "";
-    
-    if (isRefinement) {
-      prompt = `
-        Refine the following menu: ${JSON.stringify(recipes)}
-        FEEDBACK: "${followUpComment}"
-        DINERS: ${dinerCount}
-        TASK: Modify ONLY specific dishes. Keep others exactly the same.
-        DIETARY: ${activeRules.join(", ")}. 
-        TODDLER MODE: ${isToddlerFriendly ? "ON - ensure toddlerAdaptation field is updated if relevant." : "OFF"}
-        STYLE: ${getStyleLabel(styleWeight)}. 
-        DIFFICULTY: ${difficulty}.
-      `;
-    } else {
-      prompt = `
-        Executive Chef Role. Create ${dishCount} recipes for ${dinerCount} diners.
-        STYLE: ${getStyleLabel(styleWeight)}
-        DIFFICULTY: ${difficulty}
-        INGREDIENTS: Proteins (${finalProteins.join(", ")}); Fibers (${finalFibers.join(", ")})
-        RULES: ${activeRules.join(", ")}
-        SHOPPING: ${location}
-        ${toddlerInstruction}
-      `;
-    }
-
-    const payload = {
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              name: { type: "STRING" },
-              chineseName: { type: "STRING" },
-              styleTag: { type: "STRING" },
-              description: { type: "STRING" },
-              prepTime: { type: "STRING" },
-              cookTime: { type: "STRING" },
-              ingredients: { type: "ARRAY", items: { type: "STRING" } },
-              instructions: { type: "ARRAY", items: { type: "STRING" } },
-              toddlerAdaptation: { type: "STRING" }
-            },
-            required: ["name", "styleTag", "description", "prepTime", "cookTime", "ingredients", "instructions"]
-          }
-        }
-      }
-    };
-
+    const activeRules = [...standardRules.filter((rule) => rule.active).map((rule) => rule.label), ...customRules.map((rule) => rule.text)];
+    const finalProteins = proteins.map((p) => (p.value === 'CUSTOM_VAL' ? p.customText : p.value)).filter(Boolean);
+    const finalFibers = fibers.map((f) => (f.value === 'CUSTOM_VAL' ? f.customText : f.value)).filter(Boolean);
+    const toddlerInstruction = isToddlerFriendly ? "Include a 'toddlerAdaptation' string for each dish." : '';
+    const prompt = isRefinement
+      ? `Refine the following menu: ${JSON.stringify(recipes)} FEEDBACK: "${followUpComment}" DINERS: ${dinerCount} TASK: Modify ONLY specific dishes. Keep others exactly the same. DIETARY: ${activeRules.join(', ')}. TODDLER MODE: ${isToddlerFriendly ? 'ON - update toddlerAdaptation if relevant.' : 'OFF'} STYLE: ${getStyleLabel(styleWeight)}. DIFFICULTY: ${difficulty}.`
+      : `Executive Chef Role. Create ${dishCount} recipes for ${dinerCount} diners. STYLE: ${getStyleLabel(styleWeight)} DIFFICULTY: ${difficulty} INGREDIENTS: Proteins (${finalProteins.join(', ')}); Fibers (${finalFibers.join(', ')}) RULES: ${activeRules.join(', ')} SHOPPING: ${location} ${toddlerInstruction}`;
+    const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', responseSchema: { type: 'ARRAY', items: { type: 'OBJECT', properties: { name: { type: 'STRING' }, chineseName: { type: 'STRING' }, styleTag: { type: 'STRING' }, description: { type: 'STRING' }, prepTime: { type: 'STRING' }, cookTime: { type: 'STRING' }, ingredients: { type: 'ARRAY', items: { type: 'STRING' } }, instructions: { type: 'ARRAY', items: { type: 'STRING' } }, toddlerAdaptation: { type: 'STRING' } }, required: ['name', 'styleTag', 'description', 'prepTime', 'cookTime', 'ingredients', 'instructions'] } } } };
     try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      if (!response.ok) throw new Error("API call failed");
+      const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!response.ok) throw new Error('API call failed');
       const data = await response.json();
       const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (resultText) {
         setRecipes(JSON.parse(resultText));
-        if (isRefinement) setFollowUpComment("");
+        if (isRefinement) setFollowUpComment('');
       }
-    } catch (err) {
-      setError("Chef is busy. Please try again.");
+    } catch {
+      setError('Chef is busy. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[#fcfbf9] text-stone-900 pb-20 font-sans">
-      <header className="bg-indigo-950 text-white py-12 px-4 shadow-2xl relative">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between relative z-10">
-          <div className="flex items-center space-x-6">
-            <div className="bg-white/10 p-4 rounded-[2.5rem] border border-white/20">
-              <ChefHat className="text-orange-400" size={40} />
+  const IngredientBlock = ({ title, items, options, type, dot }) => (
+    <Section title={title} icon={Plus}>
+      <div className="mb-4 flex items-center justify-between">
+        <div className={`h-2.5 w-2.5 rounded-full ${dot}`} />
+        <button onClick={() => addIngredient(type)} className="rounded-xl bg-indigo-950 p-2 text-white" disabled={items.length >= 4}><Plus size={14} /></button>
+      </div>
+      <div className="space-y-3">
+        {items.map((item, index) => (
+          <div key={`${type}-${index}`} className="rounded-2xl border border-stone-100 bg-stone-50 p-3">
+            <div className="flex items-center gap-2">
+              <select className="min-w-0 flex-1 bg-transparent text-sm font-bold text-stone-700 outline-none" value={item.value} onChange={(e) => updateIngredient(type, index, 'value', e.target.value)}>
+                {options.map((option) => <option key={option} value={option}>{option === 'CUSTOM_VAL' ? 'Custom...' : option}</option>)}
+              </select>
+              {items.length > 1 && <button onClick={() => removeIngredient(type, index)} className="text-stone-300 hover:text-rose-500"><Trash2 size={16} /></button>}
             </div>
-            <div>
-              <h1 className="text-4xl font-black tracking-tighter italic">Culina<span className="text-orange-400">Fusion</span></h1>
-              <p className="text-indigo-300 text-[10px] font-black uppercase tracking-[0.3em] mt-1 italic">Tailored Gastronomy Engine</p>
+            {item.value === 'CUSTOM_VAL' && <input type="text" placeholder={type === 'protein' ? 'Protein name...' : 'Veggie name...'} className="mt-3 w-full rounded-xl border border-stone-200 bg-white p-2 text-sm outline-none" value={item.customText} onChange={(e) => updateIngredient(type, index, 'customText', e.target.value)} />}
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+
+  const menuContent = (
+    <div className="space-y-5">
+      <Section title="Meal Profile" icon={LayoutGrid}>
+        <div className={`grid gap-5 ${isMobileLayout ? 'grid-cols-1' : 'grid-cols-3'}`}>
+          <div className="space-y-3"><div className="flex items-center justify-between"><label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Dishes</label><span className="text-xl font-black text-indigo-900">{dishCount}</span></div><input type="range" min="1" max="6" step="1" value={dishCount} onChange={(e) => setDishCount(parseInt(e.target.value, 10))} className={trackClass} /></div>
+          <div className="space-y-3"><div className="flex items-center justify-between"><label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Diners</label><span className="text-xl font-black text-indigo-900">{dinerCount}</span></div><input type="range" min="2" max="8" step="1" value={dinerCount} onChange={(e) => setDinerCount(parseInt(e.target.value, 10))} className={trackClass} /></div>
+          <div className="space-y-3"><div className="flex items-center justify-between gap-4"><label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Flavor Weight</label><span className="text-xs font-bold text-orange-500">{getStyleLabel(styleWeight)}</span></div><input type="range" min="-100" max="100" step="20" value={styleWeight} onChange={(e) => setStyleWeight(parseInt(e.target.value, 10))} className="w-full cursor-pointer accent-orange-400" /></div>
+        </div>
+      </Section>
+      <div className={`grid gap-5 ${isMobileLayout ? 'grid-cols-1' : 'grid-cols-2'}`}>
+        <IngredientBlock title="Proteins" items={proteins} options={PROTEIN_OPTIONS} type="protein" dot="bg-rose-500" />
+        <IngredientBlock title="Veggies" items={fibers} options={FIBER_OPTIONS} type="fiber" dot="bg-emerald-500" />
+      </div>
+      <Section title="Kitchen Settings" icon={Settings2}>
+        <div className="space-y-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div><p className="text-sm font-black text-stone-800">Service Mode</p><p className="text-xs font-medium text-stone-500">Switch toddler-safe guidance on or off.</p></div>
+            <div className="flex items-center rounded-2xl border border-stone-100 bg-stone-50 p-1">
+              <button onClick={() => setIsToddlerFriendly(false)} className={`rounded-xl px-4 py-2 text-[10px] font-black uppercase ${!isToddlerFriendly ? 'bg-white text-indigo-950 shadow-sm' : 'text-stone-400'}`}>Adults Only</button>
+              <button onClick={() => setIsToddlerFriendly(true)} className={`flex items-center rounded-xl px-4 py-2 text-[10px] font-black uppercase ${isToddlerFriendly ? 'bg-orange-400 text-white shadow-sm' : 'text-stone-400'}`}><Baby size={12} className="mr-1.5" />Toddler</button>
             </div>
           </div>
-          <div className="mt-6 md:mt-0 flex items-center bg-white/5 px-6 py-3 rounded-full border border-white/10 backdrop-blur-sm">
-             <div className="flex items-center space-x-2 border-r border-white/10 pr-4 mr-4">
-                <Users size={16} className="text-indigo-300" />
-                <span className="text-xs font-black">{dinerCount} Diners</span>
-             </div>
-             <div className="flex items-center space-x-2">
-                <Baby size={16} className={isToddlerFriendly ? "text-orange-400" : "text-white/20"} />
-                <span className={`text-[10px] font-black uppercase ${isToddlerFriendly ? "text-orange-400" : "text-white/40"}`}>Toddler Mode {isToddlerFriendly ? "Active" : "Off"}</span>
-             </div>
+          <div className={`grid gap-4 ${isMobileLayout ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Technique Level</label><select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="w-full rounded-2xl bg-stone-100 p-4 text-sm font-bold text-stone-700">{DIFFICULTIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
+            <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Supply Source</label><select value={location} onChange={(e) => setLocation(e.target.value)} className="w-full rounded-2xl bg-stone-100 p-4 text-sm font-bold text-stone-700">{LOCATIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
+          </div>
+        </div>
+      </Section>
+    </div>
+  );
+
+  const rulesContent = (
+    <Section title="Dietary Rules" icon={ShieldCheck}>
+      <div className="space-y-6">
+        <div className="grid gap-3">
+          {standardRules.map((rule) => (
+            <button key={rule.id} onClick={() => toggleStandardRule(rule.id)} className={`rounded-[1.5rem] border p-4 text-left ${rule.active ? 'border-indigo-200 bg-indigo-50 ring-2 ring-indigo-500/10' : 'border-stone-100 bg-stone-50'}`}>
+              <div className="mb-1 flex items-center justify-between"><span className={`text-sm font-black ${rule.active ? 'text-indigo-900' : 'text-stone-400'}`}>{rule.label}</span><div className={`h-3 w-3 rounded-full ${rule.active ? 'bg-indigo-600' : 'bg-stone-300'}`} /></div>
+              <p className="text-[11px] font-medium leading-tight text-stone-500">{rule.description}</p>
+            </button>
+          ))}
+        </div>
+        <div className="border-t border-stone-100 pt-5">
+          <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-stone-400">Custom Restrictions</p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input type="text" placeholder="e.g. No shellfish, low sodium..." className="flex-1 rounded-2xl bg-stone-50 p-4 text-sm font-semibold outline-none ring-1 ring-transparent focus:ring-indigo-500" value={newRuleInput} onChange={(e) => setNewRuleInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addCustomRule()} />
+            <button onClick={addCustomRule} className="rounded-2xl bg-indigo-950 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white">Add</button>
+          </div>
+          {customRules.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{customRules.map((rule) => <div key={rule.id} className="flex items-center gap-2 rounded-xl border border-orange-100 bg-orange-50 px-4 py-2 text-xs font-bold text-orange-900"><span>{rule.text}</span><button onClick={() => removeCustomRule(rule.id)} className="text-orange-400 hover:text-orange-600"><XCircle size={14} /></button></div>)}</div>}
+        </div>
+      </div>
+    </Section>
+  );
+
+  return (
+    <div className="min-h-screen bg-[#fcfbf9] pb-20 text-stone-900">
+      <header className="relative overflow-hidden bg-indigo-950 px-4 py-10 text-white shadow-2xl">
+        <div className="absolute right-4 top-4 z-20 rounded-2xl border border-white/10 bg-white/10 p-1 backdrop-blur-sm">
+          <button onClick={() => setLayoutMode('mobile')} className={`inline-flex items-center rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest ${isMobileLayout ? 'bg-white text-indigo-950 shadow-sm' : 'text-white/60'}`}><Smartphone size={14} className="mr-2" />Portrait</button>
+          <button onClick={() => setLayoutMode('desktop')} className={`inline-flex items-center rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest ${!isMobileLayout ? 'bg-white text-indigo-950 shadow-sm' : 'text-white/60'}`}><Monitor size={14} className="mr-2" />Desktop</button>
+        </div>
+        <div className={`relative z-10 mx-auto ${isMobileLayout ? 'max-w-md' : 'max-w-6xl'}`}>
+          <div className={`flex ${isMobileLayout ? 'flex-col items-start gap-6 pt-10' : 'items-center justify-between pt-8'}`}>
+            <div className="flex items-center gap-5">
+              <div className="rounded-[2rem] border border-white/20 bg-white/10 p-4"><ChefHat className="text-orange-400" size={40} /></div>
+              <div><h1 className="text-4xl font-black italic tracking-tighter">Culina<span className="text-orange-400">Fusion</span></h1><p className="mt-1 text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">Tailored Gastronomy Engine</p></div>
+            </div>
+            <div className="flex items-center rounded-full border border-white/10 bg-white/5 px-5 py-3 backdrop-blur-sm"><div className="mr-4 flex items-center gap-2 border-r border-white/10 pr-4"><Users size={16} className="text-indigo-300" /><span className="text-xs font-black">{dinerCount} Diners</span></div><div className="flex items-center gap-2"><Baby size={16} className={isToddlerFriendly ? 'text-orange-400' : 'text-white/20'} /><span className={`text-[10px] font-black uppercase ${isToddlerFriendly ? 'text-orange-400' : 'text-white/40'}`}>Toddler {isToddlerFriendly ? 'On' : 'Off'}</span></div></div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 -mt-6">
-        <div className="bg-white rounded-[3.5rem] shadow-2xl shadow-stone-200 border border-stone-100 overflow-hidden mb-12">
-          <div className="flex bg-stone-50 border-b border-stone-100 p-2">
-            <button onClick={() => setActiveTab('menu')} className={`flex-1 py-5 px-6 rounded-[2.5rem] font-black uppercase text-xs tracking-widest transition-all ${activeTab === 'menu' ? 'bg-white text-indigo-950 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}>The Pantry</button>
-            <button onClick={() => setActiveTab('rules')} className={`flex-1 py-5 px-6 rounded-[2.5rem] font-black uppercase text-xs tracking-widest transition-all ${activeTab === 'rules' ? 'bg-white text-indigo-950 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}>Dietary Rules</button>
+      <main className={`mx-auto px-4 ${isMobileLayout ? 'max-w-md -mt-6' : 'max-w-6xl -mt-10'}`}>
+        {isMobileLayout ? (
+          <div className="rounded-[2.5rem] border border-stone-100 bg-white p-3 shadow-2xl shadow-stone-200">
+            <div className="mb-4 flex rounded-[1.75rem] bg-stone-50 p-2">
+              <button onClick={() => setActiveTab('menu')} className={`flex-1 rounded-[1.25rem] px-4 py-4 text-xs font-black uppercase tracking-widest ${activeTab === 'menu' ? 'bg-white text-indigo-950 shadow-sm' : 'text-stone-400'}`}>Pantry</button>
+              <button onClick={() => setActiveTab('rules')} className={`flex-1 rounded-[1.25rem] px-4 py-4 text-xs font-black uppercase tracking-widest ${activeTab === 'rules' ? 'bg-white text-indigo-950 shadow-sm' : 'text-stone-400'}`}>Rules</button>
+            </div>
+            {activeTab === 'menu' ? menuContent : rulesContent}
           </div>
-
-          <div className="p-8 md:p-14">
-            {activeTab === 'menu' ? (
-              <div className="space-y-12">
-                {/* Sliders Area - 3 Column Layout */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                  <div className="space-y-5">
-                    <div className="flex justify-between items-center">
-                        <label className="font-black text-stone-400 uppercase tracking-widest text-[10px] flex items-center"><LayoutGrid size={14} className="mr-2"/> Dishes</label>
-                        <span className="text-indigo-900 font-black text-xl">{dishCount}</span>
-                    </div>
-                    <input type="range" min="1" max="6" step="1" value={dishCount} onChange={(e) => setDishCount(parseInt(e.target.value))} className="w-full h-2 bg-stone-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"/>
-                  </div>
-                  <div className="space-y-5">
-                    <div className="flex justify-between items-center">
-                        <label className="font-black text-stone-400 uppercase tracking-widest text-[10px] flex items-center"><Users size={14} className="mr-2"/> Diners</label>
-                        <span className="text-indigo-900 font-black text-xl">{dinerCount}</span>
-                    </div>
-                    <input type="range" min="2" max="8" step="1" value={dinerCount} onChange={(e) => setDinerCount(parseInt(e.target.value))} className="w-full h-2 bg-stone-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"/>
-                  </div>
-                  <div className="space-y-5">
-                    <div className="flex justify-between items-center"><label className="font-black text-stone-400 uppercase tracking-widest text-[10px]">Flavor Weight</label><span className="text-indigo-600 font-bold text-xs">{getStyleLabel(styleWeight)}</span></div>
-                    <input type="range" min="-100" max="100" step="20" value={styleWeight} onChange={(e) => setStyleWeight(parseInt(e.target.value))} className="w-full h-2 bg-stone-100 rounded-lg appearance-none cursor-pointer accent-orange-400"/>
-                  </div>
-                </div>
-
-                {/* Main Ingredients Selection */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-4 border-t border-stone-100">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center border-b pb-3"><h3 className="font-black text-xs uppercase flex items-center text-stone-800"><span className="w-2.5 h-2.5 bg-rose-500 rounded-full mr-2"></span>Proteins</h3><button onClick={() => addIngredient('protein')} className="p-1.5 rounded-xl bg-indigo-950 text-white transition-transform active:scale-90" disabled={proteins.length >= 4}><Plus size={14}/></button></div>
-                    {proteins.map((p, i) => (
-                      <div key={i} className="flex flex-col space-y-2 p-3 bg-stone-50 rounded-2xl border border-stone-100">
-                        <div className="flex items-center space-x-2">
-                          <select className="flex-1 p-1 bg-transparent text-sm font-bold outline-none" value={p.value} onChange={(e) => updateIngredient('protein', i, 'value', e.target.value)}>
-                            {PROTEIN_OPTIONS.map(opt => <option key={opt} value={opt}>{opt === "CUSTOM_VAL" ? "✨ Custom..." : opt}</option>)}
-                          </select>
-                          {proteins.length > 1 && <button onClick={() => removeIngredient('protein', i)} className="text-stone-300 hover:text-rose-500"><Trash2 size={16}/></button>}
-                        </div>
-                        {p.value === "CUSTOM_VAL" && <input type="text" placeholder="Protein name..." className="p-2 text-sm bg-white border border-stone-200 rounded-xl outline-none" value={p.customText} onChange={(e) => updateIngredient('protein', i, 'customText', e.target.value)} />}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center border-b pb-3"><h3 className="font-black text-xs uppercase flex items-center text-stone-800"><span className="w-2.5 h-2.5 bg-emerald-500 rounded-full mr-2"></span>Veggies</h3><button onClick={() => addIngredient('fiber')} className="p-1.5 rounded-xl bg-indigo-950 text-white transition-transform active:scale-90" disabled={fibers.length >= 4}><Plus size={14}/></button></div>
-                    {fibers.map((f, i) => (
-                      <div key={i} className="flex flex-col space-y-2 p-3 bg-stone-50 rounded-2xl border border-stone-100">
-                        <div className="flex items-center space-x-2">
-                          <select className="flex-1 p-1 bg-transparent text-sm font-bold outline-none" value={f.value} onChange={(e) => updateIngredient('fiber', i, 'value', e.target.value)}>
-                            {FIBER_OPTIONS.map(opt => <option key={opt} value={opt}>{opt === "CUSTOM_VAL" ? "✨ Custom..." : opt}</option>)}
-                          </select>
-                          {fibers.length > 1 && <button onClick={() => removeIngredient('fiber', i)} className="text-stone-300 hover:text-rose-500"><Trash2 size={16}/></button>}
-                        </div>
-                        {f.value === "CUSTOM_VAL" && <input type="text" placeholder="Veggie name..." className="p-2 text-sm bg-white border border-stone-200 rounded-xl outline-none" value={f.customText} onChange={(e) => updateIngredient('fiber', i, 'customText', e.target.value)} />}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Kitchen Settings & Toddler Toggle */}
-                <div className="pt-10 border-t border-stone-100 space-y-10">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-black text-indigo-950 uppercase text-[10px] tracking-widest flex items-center">
-                        <Settings2 size={16} className="mr-2 text-indigo-400" /> Prep Strategy
-                    </h3>
-                    <div className="flex items-center bg-stone-50 p-1 rounded-2xl border border-stone-100">
-                        <button 
-                            onClick={() => setIsToddlerFriendly(false)}
-                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${!isToddlerFriendly ? 'bg-white text-indigo-950 shadow-sm' : 'text-stone-400'}`}
-                        >
-                            Adults Only
-                        </button>
-                        <button 
-                            onClick={() => setIsToddlerFriendly(true)}
-                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center ${isToddlerFriendly ? 'bg-orange-400 text-white shadow-sm' : 'text-stone-400'}`}
-                        >
-                            <Baby size={12} className="mr-1.5" /> Toddler Friendly
-                        </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-2">
-                      <label className="font-black text-stone-400 uppercase tracking-widest text-[10px]">Technique Level</label>
-                      <select value={difficulty} onChange={e => setDifficulty(e.target.value)} className="w-full p-4 rounded-2xl text-sm font-bold border-none bg-stone-100 text-stone-700">
-                        {DIFFICULTIES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="font-black text-stone-400 uppercase tracking-widest text-[10px]">Supply Source</label>
-                      <select value={location} onChange={e => setLocation(e.target.value)} className="w-full p-4 bg-stone-100 rounded-2xl text-sm font-bold border-none text-stone-700">
-                        {LOCATIONS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-10">
-                <div className="space-y-4">
-                  <h3 className="font-black text-indigo-950 uppercase text-xs tracking-widest flex items-center">
-                    <ShieldCheck size={16} className="mr-2 text-indigo-600" /> Standard Safety Rules
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {standardRules.map(rule => (
-                      <button 
-                        key={rule.id}
-                        onClick={() => toggleStandardRule(rule.id)}
-                        className={`p-6 rounded-[2rem] border text-left transition-all ${rule.active ? 'bg-indigo-50 border-indigo-200 ring-2 ring-indigo-500/20' : 'bg-stone-50 border-stone-100'}`}
-                      >
-                        <div className="flex justify-between items-center mb-1">
-                          <span className={`font-black text-sm ${rule.active ? 'text-indigo-900' : 'text-stone-400'}`}>{rule.label}</span>
-                          <div className={`w-3 h-3 rounded-full ${rule.active ? 'bg-indigo-600 animate-pulse' : 'bg-stone-300'}`}></div>
-                        </div>
-                        <p className="text-[10px] font-medium text-stone-500 leading-tight">{rule.description}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-6 border-t border-stone-100">
-                  <h3 className="font-black text-indigo-950 uppercase text-xs tracking-widest flex items-center">
-                    <Plus size={16} className="mr-2 text-indigo-600" /> Custom Restrictions
-                  </h3>
-                  <div className="flex space-x-2">
-                    <input 
-                      type="text" 
-                      placeholder="e.g. 'No Shellfish', 'Low Sodium'..." 
-                      className="flex-1 p-4 bg-stone-50 rounded-2xl border-none text-sm font-semibold outline-none focus:ring-2 focus:ring-indigo-500"
-                      value={newRuleInput}
-                      onChange={(e) => setNewRuleInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && addCustomRule()}
-                    />
-                    <button onClick={addCustomRule} className="bg-indigo-950 text-white px-6 rounded-2xl font-bold uppercase text-[10px] tracking-widest transition-colors hover:bg-indigo-900">Add</button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {customRules.map(rule => (
-                      <div key={rule.id} className="flex items-center bg-orange-50 text-orange-900 border border-orange-100 px-4 py-2 rounded-xl text-xs font-bold shadow-sm">
-                        <span>{rule.text}</span>
-                        <button onClick={() => removeCustomRule(rule.id)} className="ml-2 text-orange-400 hover:text-orange-600"><XCircle size={14} /></button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <button onClick={() => generateRecipes(false)} disabled={loading} className="w-full mt-12 bg-indigo-950 text-white font-black py-6 rounded-[2.5rem] flex items-center justify-center space-x-4 shadow-2xl transition-all active:scale-95 disabled:bg-stone-300">
-              {loading ? <Loader2 className="animate-spin" /> : <Sparkles className="text-orange-400" size={24} />}
-              <span className="uppercase tracking-[0.3em] text-sm">{loading ? "Simulating..." : "Construct Menu"}</span>
-            </button>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr]">
+            <div className="rounded-[2.75rem] border border-stone-100 bg-white p-6 shadow-2xl shadow-stone-200">{menuContent}</div>
+            <div className="rounded-[2.75rem] border border-stone-100 bg-white p-6 shadow-2xl shadow-stone-200">{rulesContent}</div>
           </div>
-        </div>
+        )}
+
+        <button onClick={() => generateRecipes(false)} disabled={loading} className="mt-6 flex w-full items-center justify-center gap-4 rounded-[2rem] bg-indigo-950 py-5 font-black text-white shadow-2xl disabled:bg-stone-300">
+          {loading ? <Loader2 className="animate-spin" /> : <Sparkles className="text-orange-400" size={24} />}
+          <span className="text-sm uppercase tracking-[0.25em]">{loading ? 'Simulating...' : 'Construct Menu'}</span>
+        </button>
+        {error && <div className="mt-4 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</div>}
 
         {recipes.length > 0 && (
-          <div className="space-y-12 pb-20">
-            <h2 className="text-3xl font-black text-indigo-950 tracking-tighter px-4">Executive Menu</h2>
-            <div className="grid grid-cols-1 gap-10">
-              {recipes.map((r, i) => (
-                <div key={i} className="bg-white rounded-[4rem] shadow-xl border border-stone-100 overflow-hidden flex flex-col transition-all hover:border-indigo-200 group">
-                  <div className="flex flex-col md:flex-row">
-                    <div className="md:w-1/3 p-12 bg-stone-50/50 border-r border-stone-100">
-                        <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-4 block">{r.styleTag}</span>
-                        <h3 className="text-2xl font-black text-stone-900 leading-tight mb-2">{r.name}</h3>
-                        <p className="font-serif text-lg text-indigo-800/40 mb-8 italic">{r.chineseName}</p>
-                        <div className="flex flex-wrap gap-3">
-                            <div className="flex items-center text-[10px] font-black text-stone-400 uppercase tracking-widest bg-white border border-stone-100 px-3 py-1.5 rounded-full"><Clock size={12} className="mr-2" /> {r.prepTime}</div>
-                            <div className="flex items-center text-[10px] font-black text-stone-400 uppercase tracking-widest bg-white border border-stone-100 px-3 py-1.5 rounded-full"><Flame size={12} className="mr-2" /> {r.cookTime}</div>
-                        </div>
+          <section className="pb-20 pt-10">
+            <div className="mb-8 flex items-end justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Results</p><h2 className="mt-2 text-3xl font-black tracking-tighter text-indigo-950">Executive Menu</h2></div><div className="rounded-full border border-stone-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-stone-400">{isMobileLayout ? 'Portrait Layout' : 'Desktop Layout'}</div></div>
+            <div className="space-y-8">
+              {recipes.map((recipe, index) => (
+                <article key={index} className={`overflow-hidden border border-stone-100 bg-white shadow-xl ${isMobileLayout ? 'rounded-[2.5rem]' : 'rounded-[3rem]'}`}>
+                  <div className={isMobileLayout ? 'border-b border-stone-100 bg-stone-50 px-6 py-6' : 'flex flex-col lg:flex-row'}>
+                    <div className={isMobileLayout ? '' : 'border-b border-stone-100 bg-stone-50/70 p-10 lg:w-[30%] lg:border-b-0 lg:border-r'}>
+                      <span className="mb-3 block text-[10px] font-black uppercase tracking-widest text-indigo-500">{recipe.styleTag}</span>
+                      <h3 className={`${isMobileLayout ? 'text-2xl' : 'text-3xl'} font-black leading-tight text-stone-900`}>{recipe.name}</h3>
+                      {recipe.chineseName && <p className={`${isMobileLayout ? 'text-base' : 'text-lg'} mt-2 italic text-indigo-800/40`}>{recipe.chineseName}</p>}
+                      <p className="mt-4 text-sm font-medium leading-relaxed text-stone-500">{recipe.description}</p>
+                      <div className="mt-5 flex flex-wrap gap-2">
+                        <div className="flex items-center rounded-full border border-stone-100 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-stone-400"><Clock size={12} className="mr-2" />{recipe.prepTime}</div>
+                        <div className="flex items-center rounded-full border border-stone-100 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-stone-400"><Flame size={12} className="mr-2" />{recipe.cookTime}</div>
+                      </div>
                     </div>
-                    <div className="md:w-2/3 p-12 flex flex-col justify-center">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                        <div>
-                            <h4 className="text-[10px] font-black text-stone-400 uppercase mb-5 border-b pb-2">Ingredients</h4>
-                            <ul className="text-sm space-y-2 font-bold text-stone-700">{r.ingredients.map((ing, j) => <li key={j} className="flex items-start"><span className="text-indigo-400 mr-2">/</span>{ing}</li>)}</ul>
-                        </div>
-                        <div>
-                            <h4 className="text-[10px] font-black text-stone-400 uppercase mb-5 border-b pb-2">Execution</h4>
-                            <ol className="text-sm space-y-4">{r.instructions.map((step, j) => <li key={j} className="flex space-x-3"><span className="text-indigo-950 font-black text-xs pt-0.5">{j+1}.</span><span className="text-stone-500 font-medium leading-relaxed">{step}</span></li>)}</ol>
-                        </div>
-                        </div>
+                    <div className={isMobileLayout ? 'space-y-8 px-6 py-6' : 'p-10 lg:w-[70%]'}>
+                      <div className={`grid gap-8 ${isMobileLayout ? 'grid-cols-1' : 'lg:grid-cols-2 lg:gap-10'}`}>
+                        <div><h4 className="mb-4 border-b pb-2 text-[10px] font-black uppercase tracking-widest text-stone-400">Ingredients</h4><ul className="space-y-2 text-sm font-bold text-stone-700">{recipe.ingredients.map((ingredient, itemIndex) => <li key={itemIndex} className="flex items-start"><span className="mr-2 text-indigo-400">/</span>{ingredient}</li>)}</ul></div>
+                        <div><h4 className="mb-4 border-b pb-2 text-[10px] font-black uppercase tracking-widest text-stone-400">Execution</h4><ol className="space-y-3 text-sm">{recipe.instructions.map((step, stepIndex) => <li key={stepIndex} className="flex gap-3"><span className="pt-0.5 text-xs font-black text-indigo-950">{stepIndex + 1}.</span><span className="font-medium leading-relaxed text-stone-500">{step}</span></li>)}</ol></div>
+                      </div>
                     </div>
                   </div>
-                  {r.toddlerAdaptation && (
-                    <div className="bg-orange-50/50 border-t border-orange-100 p-8 flex items-start space-x-6">
-                        <div className="bg-orange-400 p-3 rounded-2xl text-white shadow-lg shadow-orange-200">
-                            <Baby size={24} />
-                        </div>
-                        <div>
-                            <h5 className="font-black text-orange-900 text-xs uppercase tracking-widest mb-1 italic">Toddler Adaptation Advice</h5>
-                            <p className="text-sm text-orange-800 leading-relaxed font-medium">{r.toddlerAdaptation}</p>
-                        </div>
-                    </div>
-                  )}
-                </div>
+                  {recipe.toddlerAdaptation && <div className={`${isMobileLayout ? 'px-6 py-5' : 'flex items-start gap-4 p-8'} border-t border-orange-100 bg-orange-50/60`}><div className={`${isMobileLayout ? 'mb-2 flex items-center gap-2' : 'rounded-2xl bg-orange-400 p-3 text-white'} text-[10px] font-black uppercase tracking-widest text-orange-900`}>{isMobileLayout ? <><Baby size={14} />Toddler Adaptation</> : <Baby size={22} />}</div><div><h5 className={`${isMobileLayout ? 'sr-only' : 'mb-1'} text-[10px] font-black uppercase tracking-widest text-orange-900`}>{isMobileLayout ? 'Toddler Adaptation' : 'Toddler Adaptation Advice'}</h5><p className="text-sm font-medium leading-relaxed text-orange-800">{recipe.toddlerAdaptation}</p></div></div>}
+                </article>
               ))}
             </div>
 
-            <div className="bg-indigo-950 rounded-[4rem] p-12 text-white shadow-3xl relative">
-              <div className="relative z-10">
-                <div className="flex items-center space-x-3 text-orange-400 mb-3 font-black uppercase tracking-widest text-[10px]"><Undo2 size={16} /> <span>Surgical Tweak</span></div>
-                <h3 className="text-2xl font-black mb-6">Refine specific dishes?</h3>
-                <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-                  <textarea className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-6 text-sm outline-none focus:ring-2 focus:ring-orange-400 transition-all placeholder:text-white/20" rows="2" placeholder="e.g. 'Swap salmon for sea bass'..." value={followUpComment} onChange={e => setFollowUpComment(e.target.value)} />
-                  <button onClick={() => generateRecipes(true)} disabled={loading || !followUpComment.trim()} className="bg-orange-400 text-indigo-950 font-black px-12 py-5 rounded-[2rem] hover:bg-orange-300 transition-all flex items-center justify-center space-x-3 disabled:opacity-20"><RefreshCcw size={20} /> <span className="uppercase text-xs tracking-widest">Update</span></button>
-                </div>
+            <div className="mt-10 overflow-hidden rounded-[3rem] bg-indigo-950 p-8 text-white shadow-2xl">
+              <div className="mb-3 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-orange-400"><Undo2 size={16} /><span>Surgical Tweak</span></div>
+              <h3 className="text-2xl font-black">Refine specific dishes?</h3>
+              <div className={`mt-5 flex gap-4 ${isMobileLayout ? 'flex-col' : 'flex-col lg:flex-row'}`}>
+                <textarea className="min-h-[112px] flex-1 rounded-[2rem] border border-white/10 bg-white/5 p-5 text-sm outline-none placeholder:text-white/20 focus:ring-2 focus:ring-orange-400" placeholder="e.g. Swap salmon for sea bass..." value={followUpComment} onChange={(e) => setFollowUpComment(e.target.value)} />
+                <button onClick={() => generateRecipes(true)} disabled={loading || !followUpComment.trim()} className="flex items-center justify-center gap-3 rounded-[1.75rem] bg-orange-400 px-10 py-5 text-xs font-black uppercase tracking-widest text-indigo-950 disabled:opacity-20"><RefreshCcw size={18} />Update</button>
               </div>
             </div>
-          </div>
+          </section>
         )}
       </main>
     </div>
