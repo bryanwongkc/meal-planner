@@ -84,8 +84,14 @@ export default function App() {
   const generateRecipes = async (isRefinement = false) => {
     setLoading(true);
     setError('');
-    const apiKey = '';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const model = 'gemini-3.1-flash-lite-preview';
+    if (!apiKey) {
+      setError('Missing Gemini API key. Set VITE_GEMINI_API_KEY in your Vercel environment variables.');
+      setLoading(false);
+      return;
+    }
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const activeRules = [...standardRules.filter((rule) => rule.active).map((rule) => rule.label), ...customRules.map((rule) => rule.text)];
     const finalProteins = proteins.map((p) => (p.value === 'CUSTOM_VAL' ? p.customText : p.value)).filter(Boolean);
     const finalFibers = fibers.map((f) => (f.value === 'CUSTOM_VAL' ? f.customText : f.value)).filter(Boolean);
@@ -104,7 +110,7 @@ export default function App() {
         if (isRefinement) setFollowUpComment('');
       }
     } catch {
-      setError('Chef is busy. Please try again.');
+      setError('Gemini request failed. Check VITE_GEMINI_API_KEY and deployment logs.');
     } finally {
       setLoading(false);
     }
