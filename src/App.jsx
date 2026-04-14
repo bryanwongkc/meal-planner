@@ -147,7 +147,9 @@ export default function App() {
     const activeRules = dietaryRules.map((rule) => rule.text);
     const finalProteins = proteins.map((p) => (p.value === 'CUSTOM_VAL' ? p.customText : p.value)).filter(Boolean);
     const finalFibers = fibers.map((f) => (f.value === 'CUSTOM_VAL' ? f.customText : f.value)).filter(Boolean);
-    const toddlerInstruction = isToddlerFriendly ? "Include a 'toddlerAdaptation' string for each dish." : '';
+    const toddlerInstruction = isToddlerFriendly
+      ? "Include a 'toddlerAdaptation' string for each dish."
+      : "Do not include toddlerAdaptation.";
     const cookingTipsInstruction = 'Include 3 to 5 short, practical, actionable cookingTips for each dish.';
     const preferenceInstruction = todayPreference.trim() ? `TODAY PREFERENCE: ${todayPreference.trim()}.` : '';
     const flavorHealthInstruction = `FLAVOR VS HEALTH: ${flavorHealthBalance}/100 (${getFlavorHealthLabel(flavorHealthBalance)}). Reflect this balance in ingredient choices, cooking method, seasoning intensity, richness, and oil or sauce usage.`;
@@ -172,7 +174,10 @@ export default function App() {
       if (!response.ok) throw new Error(`API call failed with status ${response.status}`);
       const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (resultText) {
-        setRecipes(JSON.parse(resultText));
+        const parsedRecipes = JSON.parse(resultText).map((recipe) => (
+          isToddlerFriendly ? recipe : { ...recipe, toddlerAdaptation: '' }
+        ));
+        setRecipes(parsedRecipes);
         if (isRefinement) setFollowUpComment('');
       } else {
         throw new Error('API returned no recipe payload');
@@ -356,7 +361,7 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-                  {recipe.toddlerAdaptation && <div className={`${isMobileLayout ? 'px-6 py-5' : 'flex items-start gap-4 p-8'} border-t border-orange-100 bg-orange-50/60`}><div className={`${isMobileLayout ? 'mb-2 flex items-center gap-2' : 'rounded-2xl bg-orange-400 p-3 text-white'} text-[10px] font-black uppercase tracking-widest text-orange-900`}>{isMobileLayout ? <><Baby size={14} />Toddler Adaptation</> : <Baby size={22} />}</div><div><h5 className={`${isMobileLayout ? 'sr-only' : 'mb-1'} text-[10px] font-black uppercase tracking-widest text-orange-900`}>{isMobileLayout ? 'Toddler Adaptation' : 'Toddler Adaptation Advice'}</h5><p className="text-sm font-medium leading-relaxed text-orange-800">{recipe.toddlerAdaptation}</p></div></div>}
+                  {isToddlerFriendly && recipe.toddlerAdaptation && <div className={`${isMobileLayout ? 'px-6 py-5' : 'flex items-start gap-4 p-8'} border-t border-orange-100 bg-orange-50/60`}><div className={`${isMobileLayout ? 'mb-2 flex items-center gap-2' : 'rounded-2xl bg-orange-400 p-3 text-white'} text-[10px] font-black uppercase tracking-widest text-orange-900`}>{isMobileLayout ? <><Baby size={14} />Toddler Adaptation</> : <Baby size={22} />}</div><div><h5 className={`${isMobileLayout ? 'sr-only' : 'mb-1'} text-[10px] font-black uppercase tracking-widest text-orange-900`}>{isMobileLayout ? 'Toddler Adaptation' : 'Toddler Adaptation Advice'}</h5><p className="text-sm font-medium leading-relaxed text-orange-800">{recipe.toddlerAdaptation}</p></div></div>}
                 </article>
               ))}
             </div>
