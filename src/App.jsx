@@ -7,6 +7,7 @@ import {
 
 const PROTEIN_OPTIONS = ['Pork (Pork Belly, Sliced Pork)', 'Chicken (Thighs, Breast, Wings)', 'Beef (Flank, Sirloin, Short Ribs)', 'Tofu (Firm, Soft, Silken)', 'Fish (Whole, Fillets)', 'Shrimp / Prawns', 'Duck', 'Eggs', 'Scallops', 'Lamb', 'CUSTOM_VAL'];
 const FIBER_OPTIONS = ['Bok Choy', 'Gai Lan (Chinese Broccoli)', 'Cabbage (Napa or Green)', 'Eggplant', 'Mushrooms (Shiitake, Enoki, Oyster)', 'Green Beans', 'Snow Peas', 'Bell Peppers', 'Lotus Root', 'Potato', 'Cucumber', 'CUSTOM_VAL'];
+const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner'];
 const LOCATIONS = [{ value: 'supermarket', label: 'Supermarket' }, { value: 'wet market', label: 'Wet Market' }];
 const DIFFICULTIES = [{ value: 'Very Easy', label: 'Very Easy (Fusion/Western only)' }, { value: 'Easy', label: 'Easy' }, { value: 'Medium', label: 'Medium' }, { value: 'Hard', label: 'Hard' }];
 
@@ -31,8 +32,11 @@ export default function App() {
   const [dinerCount, setDinerCount] = useState(3);
   const [isToddlerFriendly, setIsToddlerFriendly] = useState(false);
   const [styleWeight, setStyleWeight] = useState(0);
+  const [flavorHealthBalance, setFlavorHealthBalance] = useState(50);
   const [proteins, setProteins] = useState([{ value: PROTEIN_OPTIONS[0], customText: '' }]);
   const [fibers, setFibers] = useState([{ value: FIBER_OPTIONS[0], customText: '' }]);
+  const [mealType, setMealType] = useState(MEAL_TYPES[2]);
+  const [todayPreference, setTodayPreference] = useState('');
   const [location, setLocation] = useState(LOCATIONS[0].value);
   const [difficulty, setDifficulty] = useState(DIFFICULTIES[1].value);
   const [standardRules, setStandardRules] = useState([
@@ -41,6 +45,7 @@ export default function App() {
   ]);
   const [customRules, setCustomRules] = useState([]);
   const [newRuleInput, setNewRuleInput] = useState('');
+  const [editingRuleId, setEditingRuleId] = useState(null);
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -50,12 +55,30 @@ export default function App() {
   const trackClass = 'w-full cursor-pointer accent-indigo-600';
 
   const toggleStandardRule = (id) => setStandardRules((prev) => prev.map((rule) => (rule.id === id ? { ...rule, active: !rule.active } : rule)));
-  const addCustomRule = () => {
+  const saveCustomRule = () => {
     if (!newRuleInput.trim()) return;
-    setCustomRules([...customRules, { id: Date.now(), text: newRuleInput.trim() }]);
+    if (editingRuleId !== null) {
+      setCustomRules(customRules.map((rule) => (
+        rule.id === editingRuleId ? { ...rule, text: newRuleInput.trim() } : rule
+      )));
+      setEditingRuleId(null);
+    } else {
+      setCustomRules([...customRules, { id: Date.now(), text: newRuleInput.trim() }]);
+    }
     setNewRuleInput('');
   };
-  const removeCustomRule = (id) => setCustomRules(customRules.filter((rule) => rule.id !== id));
+  const startEditingRule = (rule) => {
+    setEditingRuleId(rule.id);
+    setNewRuleInput(rule.text);
+  };
+  const cancelEditingRule = () => {
+    setEditingRuleId(null);
+    setNewRuleInput('');
+  };
+  const removeCustomRule = (id) => {
+    setCustomRules(customRules.filter((rule) => rule.id !== id));
+    if (editingRuleId === id) cancelEditingRule();
+  };
   const addIngredient = (type) => {
     const entry = { value: type === 'protein' ? PROTEIN_OPTIONS[0] : FIBER_OPTIONS[0], customText: '' };
     if (type === 'protein' && proteins.length < 4) setProteins([...proteins, entry]);
@@ -81,6 +104,14 @@ export default function App() {
     return 'Modern Western Style';
   };
 
+  const getFlavorHealthLabel = (value) => {
+    if (value <= 20) return 'Very light and health-focused';
+    if (value <= 40) return 'Balanced toward lighter cooking';
+    if (value <= 60) return 'Balanced flavor and nutrition';
+    if (value <= 80) return 'Richer and more indulgent';
+    return 'Maximum richness and flavor';
+  };
+
   const generateRecipes = async (isRefinement = false) => {
     setLoading(true);
     setError('');
@@ -96,9 +127,11 @@ export default function App() {
     const finalProteins = proteins.map((p) => (p.value === 'CUSTOM_VAL' ? p.customText : p.value)).filter(Boolean);
     const finalFibers = fibers.map((f) => (f.value === 'CUSTOM_VAL' ? f.customText : f.value)).filter(Boolean);
     const toddlerInstruction = isToddlerFriendly ? "Include a 'toddlerAdaptation' string for each dish." : '';
+    const preferenceInstruction = todayPreference.trim() ? `TODAY PREFERENCE: ${todayPreference.trim()}.` : '';
+    const flavorHealthInstruction = `FLAVOR VS HEALTH: ${flavorHealthBalance}/100 (${getFlavorHealthLabel(flavorHealthBalance)}). Reflect this balance in ingredient choices, cooking method, seasoning intensity, richness, and oil or sauce usage.`;
     const prompt = isRefinement
-      ? `Refine the following menu: ${JSON.stringify(recipes)} FEEDBACK: "${followUpComment}" DINERS: ${dinerCount} TASK: Modify ONLY specific dishes. Keep others exactly the same. DIETARY: ${activeRules.join(', ')}. TODDLER MODE: ${isToddlerFriendly ? 'ON - update toddlerAdaptation if relevant.' : 'OFF'} STYLE: ${getStyleLabel(styleWeight)}. DIFFICULTY: ${difficulty}.`
-      : `Executive Chef Role. Create ${dishCount} recipes for ${dinerCount} diners. STYLE: ${getStyleLabel(styleWeight)} DIFFICULTY: ${difficulty} INGREDIENTS: Proteins (${finalProteins.join(', ')}); Fibers (${finalFibers.join(', ')}) RULES: ${activeRules.join(', ')} SHOPPING: ${location} ${toddlerInstruction}`;
+      ? `Refine the following menu: ${JSON.stringify(recipes)} FEEDBACK: "${followUpComment}" DINERS: ${dinerCount} TASK: Modify ONLY specific dishes. Keep others exactly the same. MEAL TYPE: ${mealType}. ${preferenceInstruction} ${flavorHealthInstruction} DIETARY: ${activeRules.join(', ')}. TODDLER MODE: ${isToddlerFriendly ? 'ON - update toddlerAdaptation if relevant.' : 'OFF'} STYLE: ${getStyleLabel(styleWeight)}. DIFFICULTY: ${difficulty}.`
+      : `Executive Chef Role. Create ${dishCount} recipes for ${dinerCount} diners. MEAL TYPE: ${mealType}. ${preferenceInstruction} ${flavorHealthInstruction} STYLE: ${getStyleLabel(styleWeight)} DIFFICULTY: ${difficulty} INGREDIENTS: Proteins (${finalProteins.join(', ')}); Fibers (${finalFibers.join(', ')}) RULES: ${activeRules.join(', ')} SHOPPING: ${location} ${toddlerInstruction}`;
     const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', responseSchema: { type: 'ARRAY', items: { type: 'OBJECT', properties: { name: { type: 'STRING' }, chineseName: { type: 'STRING' }, styleTag: { type: 'STRING' }, description: { type: 'STRING' }, prepTime: { type: 'STRING' }, cookTime: { type: 'STRING' }, ingredients: { type: 'ARRAY', items: { type: 'STRING' } }, instructions: { type: 'ARRAY', items: { type: 'STRING' } }, toddlerAdaptation: { type: 'STRING' } }, required: ['name', 'styleTag', 'description', 'prepTime', 'cookTime', 'ingredients', 'instructions'] } } } };
     try {
       const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -153,6 +186,54 @@ export default function App() {
       </div>
       <Section title="Kitchen Settings" icon={Settings2}>
         <div className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Meal Type</label>
+            <div className="flex rounded-2xl border border-stone-100 bg-stone-50 p-1">
+              {MEAL_TYPES.map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setMealType(type)}
+                  className={`flex-1 rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest ${
+                    mealType === type ? 'bg-white text-indigo-950 shadow-sm' : 'text-stone-400'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Today Preference</label>
+            <div className="rounded-2xl border border-stone-100 bg-stone-50 p-1.5">
+              <input
+                type="text"
+                placeholder="e.g. soupy, light, comforting, crispy..."
+                className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-stone-700 outline-none ring-1 ring-transparent placeholder:text-stone-400 focus:ring-indigo-500"
+                value={todayPreference}
+                onChange={(e) => setTodayPreference(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Flavor vs Health</label>
+              <span className="text-xs font-bold text-orange-500">{getFlavorHealthLabel(flavorHealthBalance)}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="10"
+              value={flavorHealthBalance}
+              onChange={(e) => setFlavorHealthBalance(parseInt(e.target.value, 10))}
+              className="w-full cursor-pointer accent-orange-400"
+            />
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-stone-400">
+              <span>Healthier / lighter</span>
+              <span>{flavorHealthBalance}</span>
+              <span>Richer / flavorful</span>
+            </div>
+          </div>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div><p className="text-sm font-black text-stone-800">Service Mode</p><p className="text-xs font-medium text-stone-500">Switch toddler-safe guidance on or off.</p></div>
             <div className="flex items-center rounded-2xl border border-stone-100 bg-stone-50 p-1">
@@ -183,10 +264,23 @@ export default function App() {
         <div className="border-t border-stone-100 pt-5">
           <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-stone-400">Custom Restrictions</p>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <input type="text" placeholder="e.g. No shellfish, low sodium..." className="flex-1 rounded-2xl bg-stone-50 p-4 text-sm font-semibold outline-none ring-1 ring-transparent focus:ring-indigo-500" value={newRuleInput} onChange={(e) => setNewRuleInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addCustomRule()} />
-            <button onClick={addCustomRule} className="rounded-2xl bg-indigo-950 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white">Add</button>
+            <input type="text" placeholder="e.g. No shellfish, low sodium..." className="flex-1 rounded-2xl bg-stone-50 p-4 text-sm font-semibold outline-none ring-1 ring-transparent focus:ring-indigo-500" value={newRuleInput} onChange={(e) => setNewRuleInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && saveCustomRule()} />
+            <button onClick={saveCustomRule} className="rounded-2xl bg-indigo-950 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white">{editingRuleId !== null ? 'Save' : 'Add'}</button>
+            {editingRuleId !== null && <button onClick={cancelEditingRule} className="rounded-2xl border border-stone-200 bg-white px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">Cancel</button>}
           </div>
-          {customRules.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{customRules.map((rule) => <div key={rule.id} className="flex items-center gap-2 rounded-xl border border-orange-100 bg-orange-50 px-4 py-2 text-xs font-bold text-orange-900"><span>{rule.text}</span><button onClick={() => removeCustomRule(rule.id)} className="text-orange-400 hover:text-orange-600"><XCircle size={14} /></button></div>)}</div>}
+          {customRules.length > 0 && (
+            <div className="mt-4 grid gap-3">
+              {customRules.map((rule) => (
+                <div key={rule.id} className="flex items-center justify-between gap-3 rounded-[1.5rem] border border-orange-100 bg-orange-50 px-4 py-4">
+                  <span className="text-sm font-bold text-orange-900">{rule.text}</span>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => startEditingRule(rule)} className="rounded-xl bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-orange-700 shadow-sm">Edit</button>
+                    <button onClick={() => removeCustomRule(rule.id)} className="text-orange-400 hover:text-orange-600"><XCircle size={16} /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </Section>
