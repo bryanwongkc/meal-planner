@@ -25,6 +25,30 @@ function Section({ title, icon: Icon, children }) {
   );
 }
 
+function IngredientBlock({ title, items, options, type, dot, addIngredient, removeIngredient, updateIngredient }) {
+  return (
+    <Section title={title} icon={Plus}>
+      <div className="mb-4 flex items-center justify-between">
+        <div className={`h-2.5 w-2.5 rounded-full ${dot}`} />
+        <button onClick={() => addIngredient(type)} className="rounded-xl bg-indigo-950 p-2 text-white" disabled={items.length >= 4}><Plus size={14} /></button>
+      </div>
+      <div className="space-y-3">
+        {items.map((item, index) => (
+          <div key={`${type}-${index}`} className="rounded-2xl border border-stone-100 bg-stone-50 p-3">
+            <div className="flex items-center gap-2">
+              <select className="min-w-0 flex-1 bg-transparent text-sm font-bold text-stone-700 outline-none" value={item.value} onChange={(e) => updateIngredient(type, index, 'value', e.target.value)}>
+                {options.map((option) => <option key={option} value={option}>{option === 'CUSTOM_VAL' ? 'Custom...' : option}</option>)}
+              </select>
+              {items.length > 1 && <button onClick={() => removeIngredient(type, index)} className="text-stone-300 hover:text-rose-500"><Trash2 size={16} /></button>}
+            </div>
+            {item.value === 'CUSTOM_VAL' && <input type="text" placeholder={type === 'protein' ? 'Protein name...' : 'Veggie name...'} className="mt-3 w-full rounded-xl border border-stone-200 bg-white p-2 text-sm outline-none" value={item.customText} onChange={(e) => updateIngredient(type, index, 'customText', e.target.value)} />}
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 export default function App() {
   const [layoutMode, setLayoutMode] = useState(typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop');
   const [activeTab, setActiveTab] = useState('menu');
@@ -39,11 +63,10 @@ export default function App() {
   const [todayPreference, setTodayPreference] = useState('');
   const [location, setLocation] = useState(LOCATIONS[0].value);
   const [difficulty, setDifficulty] = useState(DIFFICULTIES[1].value);
-  const [standardRules, setStandardRules] = useState([
-    { id: 'no-spicy', label: 'No Spicy Food', active: true, description: 'Chef will avoid all chili and heat.' },
-    { id: 'one-veg', label: '1x Strictly Vegetarian', active: true, description: 'Exactly one dish must be meat-free.' }
+  const [dietaryRules, setDietaryRules] = useState([
+    { id: 'no-spicy', text: 'No Spicy Food' },
+    { id: 'one-veg', text: '1x Strictly Vegetarian' }
   ]);
-  const [customRules, setCustomRules] = useState([]);
   const [newRuleInput, setNewRuleInput] = useState('');
   const [editingRuleId, setEditingRuleId] = useState(null);
   const [recipes, setRecipes] = useState([]);
@@ -54,16 +77,15 @@ export default function App() {
   const isMobileLayout = layoutMode === 'mobile';
   const trackClass = 'w-full cursor-pointer accent-indigo-600';
 
-  const toggleStandardRule = (id) => setStandardRules((prev) => prev.map((rule) => (rule.id === id ? { ...rule, active: !rule.active } : rule)));
   const saveCustomRule = () => {
     if (!newRuleInput.trim()) return;
     if (editingRuleId !== null) {
-      setCustomRules(customRules.map((rule) => (
+      setDietaryRules(dietaryRules.map((rule) => (
         rule.id === editingRuleId ? { ...rule, text: newRuleInput.trim() } : rule
       )));
       setEditingRuleId(null);
     } else {
-      setCustomRules([...customRules, { id: Date.now(), text: newRuleInput.trim() }]);
+      setDietaryRules([...dietaryRules, { id: Date.now(), text: newRuleInput.trim() }]);
     }
     setNewRuleInput('');
   };
@@ -76,7 +98,7 @@ export default function App() {
     setNewRuleInput('');
   };
   const removeCustomRule = (id) => {
-    setCustomRules(customRules.filter((rule) => rule.id !== id));
+    setDietaryRules(dietaryRules.filter((rule) => rule.id !== id));
     if (editingRuleId === id) cancelEditingRule();
   };
   const addIngredient = (type) => {
@@ -123,7 +145,7 @@ export default function App() {
       return;
     }
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    const activeRules = [...standardRules.filter((rule) => rule.active).map((rule) => rule.label), ...customRules.map((rule) => rule.text)];
+    const activeRules = dietaryRules.map((rule) => rule.text);
     const finalProteins = proteins.map((p) => (p.value === 'CUSTOM_VAL' ? p.customText : p.value)).filter(Boolean);
     const finalFibers = fibers.map((f) => (f.value === 'CUSTOM_VAL' ? f.customText : f.value)).filter(Boolean);
     const toddlerInstruction = isToddlerFriendly ? "Include a 'toddlerAdaptation' string for each dish." : '';
@@ -149,28 +171,6 @@ export default function App() {
     }
   };
 
-  const IngredientBlock = ({ title, items, options, type, dot }) => (
-    <Section title={title} icon={Plus}>
-      <div className="mb-4 flex items-center justify-between">
-        <div className={`h-2.5 w-2.5 rounded-full ${dot}`} />
-        <button onClick={() => addIngredient(type)} className="rounded-xl bg-indigo-950 p-2 text-white" disabled={items.length >= 4}><Plus size={14} /></button>
-      </div>
-      <div className="space-y-3">
-        {items.map((item, index) => (
-          <div key={`${type}-${index}`} className="rounded-2xl border border-stone-100 bg-stone-50 p-3">
-            <div className="flex items-center gap-2">
-              <select className="min-w-0 flex-1 bg-transparent text-sm font-bold text-stone-700 outline-none" value={item.value} onChange={(e) => updateIngredient(type, index, 'value', e.target.value)}>
-                {options.map((option) => <option key={option} value={option}>{option === 'CUSTOM_VAL' ? 'Custom...' : option}</option>)}
-              </select>
-              {items.length > 1 && <button onClick={() => removeIngredient(type, index)} className="text-stone-300 hover:text-rose-500"><Trash2 size={16} /></button>}
-            </div>
-            {item.value === 'CUSTOM_VAL' && <input type="text" placeholder={type === 'protein' ? 'Protein name...' : 'Veggie name...'} className="mt-3 w-full rounded-xl border border-stone-200 bg-white p-2 text-sm outline-none" value={item.customText} onChange={(e) => updateIngredient(type, index, 'customText', e.target.value)} />}
-          </div>
-        ))}
-      </div>
-    </Section>
-  );
-
   const menuContent = (
     <div className="space-y-5">
       <Section title="Meal Profile" icon={LayoutGrid}>
@@ -181,8 +181,8 @@ export default function App() {
         </div>
       </Section>
       <div className={`grid gap-5 ${isMobileLayout ? 'grid-cols-1' : 'grid-cols-2'}`}>
-        <IngredientBlock title="Proteins" items={proteins} options={PROTEIN_OPTIONS} type="protein" dot="bg-rose-500" />
-        <IngredientBlock title="Veggies" items={fibers} options={FIBER_OPTIONS} type="fiber" dot="bg-emerald-500" />
+        <IngredientBlock title="Proteins" items={proteins} options={PROTEIN_OPTIONS} type="protein" dot="bg-rose-500" addIngredient={addIngredient} removeIngredient={removeIngredient} updateIngredient={updateIngredient} />
+        <IngredientBlock title="Veggies" items={fibers} options={FIBER_OPTIONS} type="fiber" dot="bg-emerald-500" addIngredient={addIngredient} removeIngredient={removeIngredient} updateIngredient={updateIngredient} />
       </div>
       <Section title="Kitchen Settings" icon={Settings2}>
         <div className="space-y-5">
@@ -253,35 +253,27 @@ export default function App() {
   const rulesContent = (
     <Section title="Dietary Rules" icon={ShieldCheck}>
       <div className="space-y-6">
-        <div className="grid gap-3">
-          {standardRules.map((rule) => (
-            <button key={rule.id} onClick={() => toggleStandardRule(rule.id)} className={`rounded-[1.5rem] border p-4 text-left ${rule.active ? 'border-indigo-200 bg-indigo-50 ring-2 ring-indigo-500/10' : 'border-stone-100 bg-stone-50'}`}>
-              <div className="mb-1 flex items-center justify-between"><span className={`text-sm font-black ${rule.active ? 'text-indigo-900' : 'text-stone-400'}`}>{rule.label}</span><div className={`h-3 w-3 rounded-full ${rule.active ? 'bg-indigo-600' : 'bg-stone-300'}`} /></div>
-              <p className="text-[11px] font-medium leading-tight text-stone-500">{rule.description}</p>
-            </button>
-          ))}
-        </div>
-        <div className="border-t border-stone-100 pt-5">
-          <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-stone-400">Custom Restrictions</p>
+        <div>
+          <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-stone-400">All Dietary Rules</p>
           <div className="flex flex-col gap-2 sm:flex-row">
             <input type="text" placeholder="e.g. No shellfish, low sodium..." className="flex-1 rounded-2xl bg-stone-50 p-4 text-sm font-semibold outline-none ring-1 ring-transparent focus:ring-indigo-500" value={newRuleInput} onChange={(e) => setNewRuleInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && saveCustomRule()} />
             <button onClick={saveCustomRule} className="rounded-2xl bg-indigo-950 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white">{editingRuleId !== null ? 'Save' : 'Add'}</button>
             {editingRuleId !== null && <button onClick={cancelEditingRule} className="rounded-2xl border border-stone-200 bg-white px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">Cancel</button>}
           </div>
-          {customRules.length > 0 && (
-            <div className="mt-4 grid gap-3">
-              {customRules.map((rule) => (
-                <div key={rule.id} className="flex items-center justify-between gap-3 rounded-[1.5rem] border border-orange-100 bg-orange-50 px-4 py-4">
-                  <span className="text-sm font-bold text-orange-900">{rule.text}</span>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => startEditingRule(rule)} className="rounded-xl bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-orange-700 shadow-sm">Edit</button>
-                    <button onClick={() => removeCustomRule(rule.id)} className="text-orange-400 hover:text-orange-600"><XCircle size={16} /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
+        {dietaryRules.length > 0 && (
+          <div className="grid gap-3">
+            {dietaryRules.map((rule) => (
+              <div key={rule.id} className="flex items-center justify-between gap-3 rounded-[1.5rem] border border-indigo-100 bg-indigo-50 px-4 py-4">
+                <span className="text-sm font-bold text-indigo-950">{rule.text}</span>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => startEditingRule(rule)} className="rounded-xl bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-indigo-700 shadow-sm">Edit</button>
+                  <button onClick={() => removeCustomRule(rule.id)} className="text-indigo-400 hover:text-indigo-700"><XCircle size={16} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </Section>
   );
