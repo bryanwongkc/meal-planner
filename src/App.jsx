@@ -138,13 +138,13 @@ export default function App() {
     setLoading(true);
     setError('');
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    const model = 'gemini-3.1-flash-lite-preview';
+    const primaryModel = 'gemini-3.1-flash-lite-preview';
+    const fallbackModel = 'gemini-2.5-flash';
     if (!apiKey) {
       setError('Missing Gemini API key. Set VITE_GEMINI_API_KEY in your Vercel environment variables.');
       setLoading(false);
       return;
     }
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const activeRules = dietaryRules.map((rule) => rule.text);
     const finalProteins = proteins.map((p) => (p.value === 'CUSTOM_VAL' ? p.customText : p.value)).filter(Boolean);
     const finalFibers = fibers.map((f) => (f.value === 'CUSTOM_VAL' ? f.customText : f.value)).filter(Boolean);
@@ -155,17 +155,33 @@ export default function App() {
       ? `Refine the following menu: ${JSON.stringify(recipes)} FEEDBACK: "${followUpComment}" DINERS: ${dinerCount} TASK: Modify ONLY specific dishes. Keep others exactly the same. MEAL TYPE: ${mealType}. ${preferenceInstruction} ${flavorHealthInstruction} DIETARY: ${activeRules.join(', ')}. TODDLER MODE: ${isToddlerFriendly ? 'ON - update toddlerAdaptation if relevant.' : 'OFF'} STYLE: ${getStyleLabel(styleWeight)}. DIFFICULTY: ${difficulty}.`
       : `Executive Chef Role. Create ${dishCount} recipes for ${dinerCount} diners. MEAL TYPE: ${mealType}. ${preferenceInstruction} ${flavorHealthInstruction} STYLE: ${getStyleLabel(styleWeight)} DIFFICULTY: ${difficulty} INGREDIENTS: Proteins (${finalProteins.join(', ')}); Fibers (${finalFibers.join(', ')}) RULES: ${activeRules.join(', ')} SHOPPING: ${location} ${toddlerInstruction}`;
     const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', responseSchema: { type: 'ARRAY', items: { type: 'OBJECT', properties: { name: { type: 'STRING' }, chineseName: { type: 'STRING' }, styleTag: { type: 'STRING' }, description: { type: 'STRING' }, prepTime: { type: 'STRING' }, cookTime: { type: 'STRING' }, ingredients: { type: 'ARRAY', items: { type: 'STRING' } }, instructions: { type: 'ARRAY', items: { type: 'STRING' } }, toddlerAdaptation: { type: 'STRING' } }, required: ['name', 'styleTag', 'description', 'prepTime', 'cookTime', 'ingredients', 'instructions'] } } } };
-    try {
+    const requestRecipes = async (modelName) => {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
       const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (!response.ok) throw new Error('API call failed');
-      const data = await response.json();
+      let data = null;
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+      return { response, data };
+    };
+
+    try {
+      let { response, data } = await requestRecipes(primaryModel);
+      if (response.status === 503) {
+        ({ response, data } = await requestRecipes(fallbackModel));
+      }
+      if (!response.ok) throw new Error(`API call failed with status ${response.status}`);
       const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (resultText) {
         setRecipes(JSON.parse(resultText));
         if (isRefinement) setFollowUpComment('');
+      } else {
+        throw new Error('API returned no recipe payload');
       }
     } catch {
-      setError('Gemini request failed. Check VITE_GEMINI_API_KEY and deployment logs.');
+      setError('Gemini request failed. Primary model is tried first; on 503 the app falls back to Gemini 2.5 Flash.');
     } finally {
       setLoading(false);
     }
