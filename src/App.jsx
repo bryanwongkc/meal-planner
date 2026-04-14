@@ -138,8 +138,7 @@ export default function App() {
     setLoading(true);
     setError('');
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    const primaryModel = 'gemini-3.1-flash-lite-preview';
-    const fallbackModel = 'gemini-2.5-flash';
+    const model = 'gemini-3.1-flash-lite-preview';
     if (!apiKey) {
       setError('Missing Gemini API key. Set VITE_GEMINI_API_KEY in your Vercel environment variables.');
       setLoading(false);
@@ -169,10 +168,7 @@ export default function App() {
     };
 
     try {
-      let { response, data } = await requestRecipes(primaryModel);
-      if (response.status === 503) {
-        ({ response, data } = await requestRecipes(fallbackModel));
-      }
+      const { response, data } = await requestRecipes(model);
       if (!response.ok) throw new Error(`API call failed with status ${response.status}`);
       const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (resultText) {
@@ -182,7 +178,7 @@ export default function App() {
         throw new Error('API returned no recipe payload');
       }
     } catch {
-      setError('Gemini request failed. Primary model is tried first; on 503 the app falls back to Gemini 2.5 Flash.');
+      setError('Gemini request failed. Check VITE_GEMINI_API_KEY and deployment logs.');
     } finally {
       setLoading(false);
     }
