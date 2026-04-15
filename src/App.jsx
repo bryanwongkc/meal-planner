@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Baby, ChefHat, Clock, Flame, LayoutGrid, Loader2, Monitor,
   Plus, RefreshCcw, Settings2, ShieldCheck, Smartphone, Sparkles,
   Trash2, Undo2, Users, XCircle
 } from 'lucide-react';
+import { collection, addDoc, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore';
+import { db } from './firebase/config';
 
 const PROTEIN_OPTIONS = ['Pork (Pork Belly, Sliced Pork)', 'Chicken (Thighs, Breast, Wings)', 'Beef (Flank, Sirloin, Short Ribs)', 'Tofu (Firm, Soft, Silken)', 'Fish (Whole, Fillets)', 'Shrimp / Prawns', 'Duck', 'Eggs', 'Scallops', 'Lamb', 'CUSTOM_VAL'];
 const FIBER_OPTIONS = ['Bok Choy', 'Gai Lan (Chinese Broccoli)', 'Cabbage (Napa or Green)', 'Eggplant', 'Mushrooms (Shiitake, Enoki, Oyster)', 'Green Beans', 'Snow Peas', 'Bell Peppers', 'Lotus Root', 'Potato', 'Cucumber', 'CUSTOM_VAL'];
@@ -57,6 +59,51 @@ function IngredientBlock({ title, items, options, type, dot, addIngredient, remo
   );
 }
 
+const saveRecipe = async (recipe) => {
+  try {
+    await addDoc(
+      collection(db, 'recipes'),
+      {
+        ...recipe,
+        createdAt: serverTimestamp()
+      }
+    );
+    console.log('Recipe saved!');
+  } catch (e) {
+    console.error('Error saving recipe:', e);
+  }
+};
+
+const buildSavedRecipePayload = (recipe, mealType) => ({
+  title: recipe.chineseName ? `${recipe.chineseName} + ${recipe.name}` : recipe.name,
+  mealType: mealType.toLowerCase(),
+  isFavorite: false,
+  ...recipe
+});
+
+const useRecipes = () => {
+  const [recipes, setRecipes] = useState([]);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, 'recipes'),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setRecipes(data);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  return recipes;
+};
+
 export default function App() {
   const [layoutMode, setLayoutMode] = useState(typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop');
   const [activeTab, setActiveTab] = useState('menu');
@@ -77,10 +124,11 @@ export default function App() {
   ]);
   const [newRuleInput, setNewRuleInput] = useState('');
   const [editingRuleId, setEditingRuleId] = useState(null);
-  const [recipes, setRecipes] = useState([]);
+  const [generatedRecipes, setGeneratedRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [followUpComment, setFollowUpComment] = useState('');
+  const recipes = useRecipes();
 
   const isMobileLayout = layoutMode === 'mobile';
   const trackClass = 'w-full cursor-pointer accent-[#4B5563]';
@@ -162,7 +210,7 @@ export default function App() {
     const preferenceInstruction = todayPreference.trim() ? `TODAY PREFERENCE: ${todayPreference.trim()}.` : '';
     const flavorHealthInstruction = `FLAVOR VS HEALTH: ${flavorHealthBalance}/100 (${getFlavorHealthLabel(flavorHealthBalance)}). Reflect this balance in ingredient choices, cooking method, seasoning intensity, richness, and oil or sauce usage.`;
     const prompt = isRefinement
-      ? `Refine the following menu: ${JSON.stringify(recipes)} FEEDBACK: "${followUpComment}" DINERS: ${dinerCount} TASK: Modify ONLY specific dishes. Keep others exactly the same. MEAL TYPE: ${mealType}. ${preferenceInstruction} ${flavorHealthInstruction} DIETARY: ${activeRules.join(', ')}. TODDLER MODE: ${isToddlerFriendly ? 'ON - update toddlerAdaptation if relevant.' : 'OFF'} STYLE: ${getStyleLabel(styleWeight)}. DIFFICULTY: ${difficulty}. ${cookingTipsInstruction}`
+      ? `Refine the following menu: ${JSON.stringify(generatedRecipes)} FEEDBACK: "${followUpComment}" DINERS: ${dinerCount} TASK: Modify ONLY specific dishes. Keep others exactly the same. MEAL TYPE: ${mealType}. ${preferenceInstruction} ${flavorHealthInstruction} DIETARY: ${activeRules.join(', ')}. TODDLER MODE: ${isToddlerFriendly ? 'ON - update toddlerAdaptation if relevant.' : 'OFF'} STYLE: ${getStyleLabel(styleWeight)}. DIFFICULTY: ${difficulty}. ${cookingTipsInstruction}`
       : `Executive Chef Role. Create ${dishCount} recipes for ${dinerCount} diners. MEAL TYPE: ${mealType}. ${preferenceInstruction} ${flavorHealthInstruction} STYLE: ${getStyleLabel(styleWeight)} DIFFICULTY: ${difficulty} INGREDIENTS: Proteins (${finalProteins.join(', ')}); Fibers (${finalFibers.join(', ')}) RULES: ${activeRules.join(', ')} SHOPPING: ${location} ${toddlerInstruction} ${cookingTipsInstruction}`;
     const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', responseSchema: { type: 'ARRAY', items: { type: 'OBJECT', properties: { name: { type: 'STRING' }, chineseName: { type: 'STRING' }, styleTag: { type: 'STRING' }, description: { type: 'STRING' }, prepTime: { type: 'STRING' }, cookTime: { type: 'STRING' }, ingredients: { type: 'ARRAY', items: { type: 'STRING' } }, instructions: { type: 'ARRAY', items: { type: 'STRING' } }, cookingTips: { type: 'ARRAY', items: { type: 'STRING' } }, toddlerAdaptation: { type: 'STRING' } }, required: ['name', 'styleTag', 'description', 'prepTime', 'cookTime', 'ingredients', 'instructions', 'cookingTips'] } } } };
     const requestRecipes = async (modelName) => {
@@ -185,7 +233,7 @@ export default function App() {
         const parsedRecipes = JSON.parse(resultText).map((recipe) => (
           isToddlerFriendly ? recipe : { ...recipe, toddlerAdaptation: '' }
         ));
-        setRecipes(parsedRecipes);
+        setGeneratedRecipes(parsedRecipes);
         if (isRefinement) setFollowUpComment('');
       } else {
         throw new Error('API returned no recipe payload');
@@ -352,11 +400,11 @@ export default function App() {
         </div>
         {error && <div className="mt-4 rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-[14px] font-medium text-[#6B7280] shadow-[0_6px_20px_rgba(0,0,0,0.04)]">{error}</div>}
 
-        {recipes.length > 0 && (
+        {generatedRecipes.length > 0 && (
           <section className="pb-20 pt-10">
             <div className="mb-8 flex items-end justify-between gap-4"><div><p className="text-[12px] text-[#6B7280]">Results</p><h2 className="mt-2 text-[30px] font-semibold tracking-[-0.03em] text-[#111111]">Executive Menu</h2></div><div className="rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-[12px] font-medium text-[#6B7280] shadow-[0_6px_20px_rgba(0,0,0,0.04)]">{isMobileLayout ? 'Portrait Layout' : 'Desktop Layout'}</div></div>
             <div className="space-y-8">
-              {recipes.map((recipe, index) => (
+              {generatedRecipes.map((recipe, index) => (
                 <article key={index} className="overflow-hidden rounded-2xl border border-[#EEEEEE] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.04)] transition duration-200 ease-out hover:shadow-[0_10px_28px_rgba(0,0,0,0.06)]">
                   <div className={isMobileLayout ? 'border-b border-[#EEEEEE] px-6 py-6' : 'flex flex-col lg:flex-row'}>
                     <div className={isMobileLayout ? '' : 'border-b border-[#EEEEEE] p-8 lg:w-[30%] lg:border-b-0 lg:border-r'}>
@@ -368,6 +416,12 @@ export default function App() {
                         <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Clock size={12} className="mr-2 text-[#4B5563]" />{recipe.prepTime}</div>
                         <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Flame size={12} className="mr-2 text-[#4B5563]" />{recipe.cookTime}</div>
                       </div>
+                      <button
+                        onClick={() => saveRecipe(buildSavedRecipePayload(recipe, mealType))}
+                        className="mt-5 inline-flex items-center justify-center rounded-xl bg-[#4B5563] px-4 py-2.5 text-[13px] font-semibold text-white transition duration-200 ease-out hover:bg-[#374151] active:scale-[0.98]"
+                      >
+                        Save Recipe
+                      </button>
                     </div>
                     <div className={isMobileLayout ? 'space-y-8 px-6 py-6' : 'p-8 lg:w-[70%]'}>
                       <div className={`grid gap-8 ${isMobileLayout ? 'grid-cols-1' : 'lg:grid-cols-3 lg:gap-8'}`}>
@@ -392,6 +446,26 @@ export default function App() {
             </div>
           </section>
         )}
+
+        <section className="pb-20 pt-2">
+          <div className="mb-5">
+            <p className="text-[12px] text-[#6B7280]">Saved</p>
+            <h2 className="mt-2 text-[24px] font-semibold tracking-[-0.03em] text-[#111111]">Saved Recipes</h2>
+          </div>
+          <div className="grid gap-4">
+            {recipes.map((r) => (
+              <div key={r.id} className="rounded-2xl border border-[#EEEEEE] bg-white px-5 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.04)]">
+                <h3 className="text-[17px] font-semibold text-[#111111]">{r.title}</h3>
+                <p className="mt-1 text-[14px] capitalize text-[#6B7280]">{r.mealType}</p>
+              </div>
+            ))}
+            {recipes.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-[#D1D5DB] bg-white px-5 py-8 text-center text-[14px] text-[#6B7280]">
+                No saved recipes yet.
+              </div>
+            )}
+          </div>
+        </section>
       </main>
     </div>
   );
