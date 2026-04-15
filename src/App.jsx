@@ -11,14 +11,18 @@ const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner'];
 const LOCATIONS = [{ value: 'supermarket', label: 'Supermarket' }, { value: 'wet market', label: 'Wet Market' }];
 const DIFFICULTIES = [{ value: 'Very Easy', label: 'Very Easy (Fusion/Western only)' }, { value: 'Easy', label: 'Easy' }, { value: 'Medium', label: 'Medium' }, { value: 'Hard', label: 'Hard' }];
 
-const card = 'rounded-[2rem] border border-stone-100 bg-white p-5 shadow-sm';
+const card = 'rounded-2xl border border-[#EEEEEE] bg-white p-6 shadow-[0_6px_20px_rgba(0,0,0,0.04)]';
+const inputClass = 'w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[15px] font-medium text-[#111111] outline-none transition focus:border-[#2F6BFF] focus:ring-2 focus:ring-[rgba(47,107,255,0.12)] placeholder:text-[#6B7280]';
+const selectClass = 'w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[15px] font-medium text-[#111111] outline-none transition focus:border-[#2F6BFF] focus:ring-2 focus:ring-[rgba(47,107,255,0.12)]';
+const primaryButtonClass = 'rounded-xl bg-[#2F6BFF] px-5 py-3 text-[13px] font-semibold text-white transition duration-200 ease-out hover:bg-[#2459D6] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#B9CCFF]';
+const secondaryButtonClass = 'rounded-xl border border-[rgba(47,107,255,0.22)] bg-[rgba(47,107,255,0.08)] px-4 py-2.5 text-[12px] font-semibold text-[#2F6BFF] transition duration-200 ease-out hover:bg-[rgba(47,107,255,0.12)] active:scale-[0.98]';
 
 function Section({ title, icon: Icon, children }) {
   return (
     <section className={card}>
-      <div className="mb-5 flex items-center gap-2">
-        <div className="rounded-2xl bg-stone-100 p-2 text-indigo-900"><Icon size={16} /></div>
-        <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-stone-500">{title}</h3>
+      <div className="mb-6 flex items-center gap-3">
+        <div className="rounded-xl bg-[rgba(47,107,255,0.08)] p-2.5 text-[#2F6BFF]"><Icon size={16} /></div>
+        <h3 className="text-[20px] font-semibold tracking-[-0.02em] text-[#111111]">{title}</h3>
       </div>
       {children}
     </section>
@@ -29,19 +33,23 @@ function IngredientBlock({ title, items, options, type, dot, addIngredient, remo
   return (
     <Section title={title} icon={Plus}>
       <div className="mb-4 flex items-center justify-between">
-        <div className={`h-2.5 w-2.5 rounded-full ${dot}`} />
-        <button onClick={() => addIngredient(type)} className="rounded-xl bg-indigo-950 p-2 text-white" disabled={items.length >= 4}><Plus size={14} /></button>
+        <div className="flex items-center gap-2 text-[13px] font-medium text-[#6B7280]">
+          <div className={`h-2 w-2 rounded-full ${dot}`} />
+          <span>{items.length} selected</span>
+        </div>
+        <button onClick={() => addIngredient(type)} className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2F6BFF] text-white transition duration-200 ease-out hover:bg-[#2459D6] active:scale-[0.98]" disabled={items.length >= 4}><Plus size={14} /></button>
       </div>
       <div className="space-y-3">
         {items.map((item, index) => (
-          <div key={`${type}-${index}`} className="rounded-2xl border border-stone-100 bg-stone-50 p-3">
+          <div key={`${type}-${index}`} className="rounded-xl border border-[#E5E7EB] bg-white p-3">
             <div className="flex items-center gap-2">
-              <select className="min-w-0 flex-1 bg-transparent text-sm font-bold text-stone-700 outline-none" value={item.value} onChange={(e) => updateIngredient(type, index, 'value', e.target.value)}>
+              <div className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
+              <select className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-[#111111] outline-none" value={item.value} onChange={(e) => updateIngredient(type, index, 'value', e.target.value)}>
                 {options.map((option) => <option key={option} value={option}>{option === 'CUSTOM_VAL' ? 'Custom...' : option}</option>)}
               </select>
-              {items.length > 1 && <button onClick={() => removeIngredient(type, index)} className="text-stone-300 hover:text-rose-500"><Trash2 size={16} /></button>}
+              {items.length > 1 && <button onClick={() => removeIngredient(type, index)} className="rounded-lg p-1.5 text-[#6B7280] transition hover:bg-[rgba(47,107,255,0.08)] hover:text-[#2F6BFF]"><Trash2 size={15} /></button>}
             </div>
-            {item.value === 'CUSTOM_VAL' && <input type="text" placeholder={type === 'protein' ? 'Protein name...' : 'Veggie name...'} className="mt-3 w-full rounded-xl border border-stone-200 bg-white p-2 text-sm outline-none" value={item.customText} onChange={(e) => updateIngredient(type, index, 'customText', e.target.value)} />}
+            {item.value === 'CUSTOM_VAL' && <input type="text" placeholder={type === 'protein' ? 'Protein name...' : 'Veggie name...'} className={`${inputClass} mt-3`} value={item.customText} onChange={(e) => updateIngredient(type, index, 'customText', e.target.value)} />}
           </div>
         ))}
       </div>
@@ -75,7 +83,7 @@ export default function App() {
   const [followUpComment, setFollowUpComment] = useState('');
 
   const isMobileLayout = layoutMode === 'mobile';
-  const trackClass = 'w-full cursor-pointer accent-indigo-600';
+  const trackClass = 'w-full cursor-pointer accent-[#2F6BFF]';
 
   const saveCustomRule = () => {
     if (!newRuleInput.trim()) return;
@@ -193,26 +201,26 @@ export default function App() {
     <div className="space-y-5">
       <Section title="Meal Profile" icon={LayoutGrid}>
         <div className={`grid gap-5 ${isMobileLayout ? 'grid-cols-1' : 'grid-cols-3'}`}>
-          <div className="space-y-3"><div className="flex items-center justify-between"><label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Dishes</label><span className="text-xl font-black text-indigo-900">{dishCount}</span></div><input type="range" min="1" max="6" step="1" value={dishCount} onChange={(e) => setDishCount(parseInt(e.target.value, 10))} className={trackClass} /></div>
-          <div className="space-y-3"><div className="flex items-center justify-between"><label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Diners</label><span className="text-xl font-black text-indigo-900">{dinerCount}</span></div><input type="range" min="2" max="8" step="1" value={dinerCount} onChange={(e) => setDinerCount(parseInt(e.target.value, 10))} className={trackClass} /></div>
-          <div className="space-y-3"><div className="flex items-center justify-between gap-4"><label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Flavor Weight</label><span className="text-xs font-bold text-orange-500">{getStyleLabel(styleWeight)}</span></div><input type="range" min="-100" max="100" step="20" value={styleWeight} onChange={(e) => setStyleWeight(parseInt(e.target.value, 10))} className="w-full cursor-pointer accent-orange-400" /></div>
+          <div className="space-y-3"><div className="flex items-center justify-between"><label className="text-[12px] font-medium text-[#6B7280]">Dishes</label><span className="text-[22px] font-semibold text-[#111111]">{dishCount}</span></div><input type="range" min="1" max="6" step="1" value={dishCount} onChange={(e) => setDishCount(parseInt(e.target.value, 10))} className={trackClass} /><div className="flex justify-between text-[12px] text-[#6B7280]"><span>Light spread</span><span>Full table</span></div></div>
+          <div className="space-y-3"><div className="flex items-center justify-between"><label className="text-[12px] font-medium text-[#6B7280]">Diners</label><span className="text-[22px] font-semibold text-[#111111]">{dinerCount}</span></div><input type="range" min="2" max="8" step="1" value={dinerCount} onChange={(e) => setDinerCount(parseInt(e.target.value, 10))} className={trackClass} /><div className="flex justify-between text-[12px] text-[#6B7280]"><span>Smaller meal</span><span>Group dinner</span></div></div>
+          <div className="space-y-3"><div className="flex items-center justify-between gap-4"><label className="text-[12px] font-medium text-[#6B7280]">Flavor Weight</label><span className="text-[13px] font-medium text-[#2F6BFF]">{getStyleLabel(styleWeight)}</span></div><input type="range" min="-100" max="100" step="20" value={styleWeight} onChange={(e) => setStyleWeight(parseInt(e.target.value, 10))} className="w-full cursor-pointer accent-[#2F6BFF]" /><div className="flex justify-between text-[12px] text-[#6B7280]"><span>Classic</span><span>Global</span><span>Bold</span></div></div>
         </div>
       </Section>
       <div className={`grid gap-5 ${isMobileLayout ? 'grid-cols-1' : 'grid-cols-2'}`}>
-        <IngredientBlock title="Proteins" items={proteins} options={PROTEIN_OPTIONS} type="protein" dot="bg-rose-500" addIngredient={addIngredient} removeIngredient={removeIngredient} updateIngredient={updateIngredient} />
-        <IngredientBlock title="Veggies" items={fibers} options={FIBER_OPTIONS} type="fiber" dot="bg-emerald-500" addIngredient={addIngredient} removeIngredient={removeIngredient} updateIngredient={updateIngredient} />
+        <IngredientBlock title="Proteins" items={proteins} options={PROTEIN_OPTIONS} type="protein" dot="bg-[#2F6BFF]" addIngredient={addIngredient} removeIngredient={removeIngredient} updateIngredient={updateIngredient} />
+        <IngredientBlock title="Veggies" items={fibers} options={FIBER_OPTIONS} type="fiber" dot="bg-[#2F6BFF]" addIngredient={addIngredient} removeIngredient={removeIngredient} updateIngredient={updateIngredient} />
       </div>
       <Section title="Kitchen Settings" icon={Settings2}>
         <div className="space-y-5">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Meal Type</label>
-            <div className="flex rounded-2xl border border-stone-100 bg-stone-50 p-1">
+            <label className="text-[12px] font-medium text-[#6B7280]">Meal Type</label>
+            <div className="flex rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] p-1">
               {MEAL_TYPES.map((type) => (
                 <button
                   key={type}
                   onClick={() => setMealType(type)}
-                  className={`flex-1 rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest ${
-                    mealType === type ? 'bg-white text-indigo-950 shadow-sm' : 'text-stone-400'
+                  className={`flex-1 rounded-lg px-4 py-2.5 text-[13px] font-medium transition duration-200 ease-out ${
+                    mealType === type ? 'bg-[#2F6BFF] text-white shadow-[0_4px_12px_rgba(47,107,255,0.22)]' : 'text-[#6B7280]'
                   }`}
                 >
                   {type}
@@ -221,12 +229,12 @@ export default function App() {
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Today Preference</label>
-            <div className="rounded-2xl border border-stone-100 bg-stone-50 p-1.5">
+            <label className="text-[12px] font-medium text-[#6B7280]">Today Preference</label>
+            <div>
               <input
                 type="text"
                 placeholder="e.g. soupy, light, comforting, crispy..."
-                className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-stone-700 outline-none ring-1 ring-transparent placeholder:text-stone-400 focus:ring-indigo-500"
+                className={inputClass}
                 value={todayPreference}
                 onChange={(e) => setTodayPreference(e.target.value)}
               />
@@ -234,8 +242,8 @@ export default function App() {
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-4">
-              <label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Flavor vs Health</label>
-              <span className="text-xs font-bold text-orange-500">{getFlavorHealthLabel(flavorHealthBalance)}</span>
+              <label className="text-[12px] font-medium text-[#6B7280]">Flavor vs Health</label>
+              <span className="text-[13px] font-medium text-[#2F6BFF]">{getFlavorHealthLabel(flavorHealthBalance)}</span>
             </div>
             <input
               type="range"
@@ -244,24 +252,24 @@ export default function App() {
               step="10"
               value={flavorHealthBalance}
               onChange={(e) => setFlavorHealthBalance(parseInt(e.target.value, 10))}
-              className="w-full cursor-pointer accent-orange-400"
+              className="w-full cursor-pointer accent-[#2F6BFF]"
             />
-            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-stone-400">
+            <div className="flex items-center justify-between text-[12px] text-[#6B7280]">
               <span>Healthier / lighter</span>
               <span>{flavorHealthBalance}</span>
               <span>Richer / flavorful</span>
             </div>
           </div>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div><p className="text-sm font-black text-stone-800">Service Mode</p><p className="text-xs font-medium text-stone-500">Switch toddler-safe guidance on or off.</p></div>
-            <div className="flex items-center rounded-2xl border border-stone-100 bg-stone-50 p-1">
-              <button onClick={() => setIsToddlerFriendly(false)} className={`rounded-xl px-4 py-2 text-[10px] font-black uppercase ${!isToddlerFriendly ? 'bg-white text-indigo-950 shadow-sm' : 'text-stone-400'}`}>Adults Only</button>
-              <button onClick={() => setIsToddlerFriendly(true)} className={`flex items-center rounded-xl px-4 py-2 text-[10px] font-black uppercase ${isToddlerFriendly ? 'bg-orange-400 text-white shadow-sm' : 'text-stone-400'}`}><Baby size={12} className="mr-1.5" />Toddler</button>
+            <div><p className="text-[15px] font-medium text-[#111111]">Service Mode</p><p className="text-[13px] text-[#6B7280]">Switch toddler-safe guidance on or off.</p></div>
+            <div className="flex items-center rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] p-1">
+              <button onClick={() => setIsToddlerFriendly(false)} className={`rounded-lg px-4 py-2.5 text-[13px] font-medium transition duration-200 ease-out ${!isToddlerFriendly ? 'bg-[#2F6BFF] text-white shadow-[0_4px_12px_rgba(47,107,255,0.22)]' : 'text-[#6B7280]'}`}>Adults Only</button>
+              <button onClick={() => setIsToddlerFriendly(true)} className={`flex items-center rounded-lg px-4 py-2.5 text-[13px] font-medium transition duration-200 ease-out ${isToddlerFriendly ? 'bg-[#2F6BFF] text-white shadow-[0_4px_12px_rgba(47,107,255,0.22)]' : 'text-[#6B7280]'}`}><Baby size={12} className="mr-1.5" />Toddler</button>
             </div>
           </div>
           <div className={`grid gap-4 ${isMobileLayout ? 'grid-cols-1' : 'grid-cols-2'}`}>
-            <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Technique Level</label><select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="w-full rounded-2xl bg-stone-100 p-4 text-sm font-bold text-stone-700">{DIFFICULTIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
-            <div className="space-y-2"><label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Supply Source</label><select value={location} onChange={(e) => setLocation(e.target.value)} className="w-full rounded-2xl bg-stone-100 p-4 text-sm font-bold text-stone-700">{LOCATIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
+            <div className="space-y-2"><label className="text-[12px] font-medium text-[#6B7280]">Technique Level</label><select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className={selectClass}>{DIFFICULTIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
+            <div className="space-y-2"><label className="text-[12px] font-medium text-[#6B7280]">Supply Source</label><select value={location} onChange={(e) => setLocation(e.target.value)} className={selectClass}>{LOCATIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
           </div>
         </div>
       </Section>
@@ -272,21 +280,24 @@ export default function App() {
     <Section title="Dietary Rules" icon={ShieldCheck}>
       <div className="space-y-6">
         <div>
-          <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-stone-400">All Dietary Rules</p>
+          <p className="mb-3 text-[12px] font-medium text-[#6B7280]">All Dietary Rules</p>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <input type="text" placeholder="e.g. No shellfish, low sodium..." className="flex-1 rounded-2xl bg-stone-50 p-4 text-sm font-semibold outline-none ring-1 ring-transparent focus:ring-indigo-500" value={newRuleInput} onChange={(e) => setNewRuleInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && saveCustomRule()} />
-            <button onClick={saveCustomRule} className="rounded-2xl bg-indigo-950 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white">{editingRuleId !== null ? 'Save' : 'Add'}</button>
-            {editingRuleId !== null && <button onClick={cancelEditingRule} className="rounded-2xl border border-stone-200 bg-white px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">Cancel</button>}
+            <input type="text" placeholder="e.g. No shellfish, low sodium..." className={`flex-1 ${inputClass}`} value={newRuleInput} onChange={(e) => setNewRuleInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && saveCustomRule()} />
+            <button onClick={saveCustomRule} className={primaryButtonClass}>{editingRuleId !== null ? 'Save' : 'Add'}</button>
+            {editingRuleId !== null && <button onClick={cancelEditingRule} className={secondaryButtonClass}>Cancel</button>}
           </div>
         </div>
         {dietaryRules.length > 0 && (
           <div className="grid gap-3">
             {dietaryRules.map((rule) => (
-              <div key={rule.id} className="flex items-center justify-between gap-3 rounded-[1.5rem] border border-indigo-100 bg-indigo-50 px-4 py-4">
-                <span className="text-sm font-bold text-indigo-950">{rule.text}</span>
+              <div key={rule.id} className="flex items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] bg-[rgba(47,107,255,0.08)] px-4 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-2 w-2 rounded-full bg-[#2F6BFF]" />
+                  <span className="text-[15px] font-medium text-[#111111]">{rule.text}</span>
+                </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => startEditingRule(rule)} className="rounded-xl bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-indigo-700 shadow-sm">Edit</button>
-                  <button onClick={() => removeCustomRule(rule.id)} className="text-indigo-400 hover:text-indigo-700"><XCircle size={16} /></button>
+                  <button onClick={() => startEditingRule(rule)} className={secondaryButtonClass}>Edit</button>
+                  <button onClick={() => removeCustomRule(rule.id)} className="rounded-lg p-1.5 text-[#6B7280] transition hover:bg-[rgba(47,107,255,0.08)] hover:text-[#2F6BFF]"><XCircle size={16} /></button>
                 </div>
               </div>
             ))}
@@ -297,81 +308,86 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-[#fcfbf9] pb-20 text-stone-900">
-      <header className="relative overflow-hidden bg-indigo-950 px-4 py-10 text-white shadow-2xl">
-        <div className="absolute right-4 top-4 z-20 rounded-2xl border border-white/10 bg-white/10 p-1 backdrop-blur-sm">
-          <button onClick={() => setLayoutMode('mobile')} className={`inline-flex items-center rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest ${isMobileLayout ? 'bg-white text-indigo-950 shadow-sm' : 'text-white/60'}`}><Smartphone size={14} className="mr-2" />Portrait</button>
-          <button onClick={() => setLayoutMode('desktop')} className={`inline-flex items-center rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest ${!isMobileLayout ? 'bg-white text-indigo-950 shadow-sm' : 'text-white/60'}`}><Monitor size={14} className="mr-2" />Desktop</button>
-        </div>
-        <div className={`relative z-10 mx-auto ${isMobileLayout ? 'max-w-md' : 'max-w-6xl'}`}>
-          <div className={`flex ${isMobileLayout ? 'flex-col items-start gap-6 pt-10' : 'items-center justify-between pt-8'}`}>
-            <div className="flex items-center gap-5">
-              <div className="rounded-[2rem] border border-white/20 bg-white/10 p-4"><ChefHat className="text-orange-400" size={40} /></div>
-              <div><h1 className="text-4xl font-black italic tracking-tighter">Culina<span className="text-orange-400">Fusion</span></h1><p className="mt-1 text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">Tailored Gastronomy Engine</p></div>
+    <div className="min-h-screen bg-[#F7F8FA] pb-20 text-[#111111]">
+      <header className="sticky top-0 z-30 border-b border-[rgba(255,255,255,0.4)] bg-[rgba(255,255,255,0.6)] px-4 py-4 backdrop-blur-[12px]">
+        <div className="mx-auto max-w-6xl">
+          <div className={`flex ${isMobileLayout ? 'flex-col gap-4' : 'items-center justify-between gap-6'}`}>
+            <div className="flex items-center gap-4">
+              <div className="rounded-2xl border border-[#E5E7EB] bg-white p-3 text-[#111111] shadow-[0_6px_20px_rgba(0,0,0,0.04)]"><ChefHat size={28} /></div>
+              <div><h1 className="text-[30px] font-bold tracking-[-0.03em] text-[#111111]">Culina<span className="text-[#2F6BFF]">Fusion</span></h1><p className="mt-1 text-[12px] text-[#6B7280]">Tailored gastronomy engine</p></div>
             </div>
-            <div className="flex items-center rounded-full border border-white/10 bg-white/5 px-5 py-3 backdrop-blur-sm"><div className="mr-4 flex items-center gap-2 border-r border-white/10 pr-4"><Users size={16} className="text-indigo-300" /><span className="text-xs font-black">{dinerCount} Diners</span></div><div className="flex items-center gap-2"><Baby size={16} className={isToddlerFriendly ? 'text-orange-400' : 'text-white/20'} /><span className={`text-[10px] font-black uppercase ${isToddlerFriendly ? 'text-orange-400' : 'text-white/40'}`}>Toddler {isToddlerFriendly ? 'On' : 'Off'}</span></div></div>
+            <div className={`flex ${isMobileLayout ? 'flex-wrap' : 'items-center'} gap-3`}>
+              <div className="flex rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] p-1">
+                <button onClick={() => setLayoutMode('mobile')} className={`inline-flex items-center rounded-lg px-3 py-2 text-[13px] font-medium transition ${isMobileLayout ? 'bg-[#2F6BFF] text-white' : 'text-[#6B7280]'}`}><Smartphone size={14} className="mr-2" />Portrait</button>
+                <button onClick={() => setLayoutMode('desktop')} className={`inline-flex items-center rounded-lg px-3 py-2 text-[13px] font-medium transition ${!isMobileLayout ? 'bg-[#2F6BFF] text-white' : 'text-[#6B7280]'}`}><Monitor size={14} className="mr-2" />Desktop</button>
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-[13px] font-medium text-[#111111] shadow-[0_6px_20px_rgba(0,0,0,0.04)]"><Users size={14} className="text-[#2F6BFF]" /><span>{dinerCount} Diners</span></div>
+              <div className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-medium shadow-[0_6px_20px_rgba(0,0,0,0.04)] ${isToddlerFriendly ? 'border-[rgba(47,107,255,0.22)] bg-[rgba(47,107,255,0.08)] text-[#2F6BFF]' : 'border-[#E5E7EB] bg-white text-[#6B7280]'}`}><Baby size={14} className={isToddlerFriendly ? 'text-[#2F6BFF]' : 'text-[#6B7280]'} /><span>{isToddlerFriendly ? 'Toddler On' : 'Adults Only'}</span></div>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className={`mx-auto px-4 ${isMobileLayout ? 'max-w-md -mt-6' : 'max-w-6xl -mt-10'}`}>
+      <main className={`mx-auto px-4 pt-8 ${isMobileLayout ? 'max-w-md' : 'max-w-6xl'}`}>
         {isMobileLayout ? (
-          <div className="rounded-[2.5rem] border border-stone-100 bg-white p-3 shadow-2xl shadow-stone-200">
-            <div className="mb-4 flex rounded-[1.75rem] bg-stone-50 p-2">
-              <button onClick={() => setActiveTab('menu')} className={`flex-1 rounded-[1.25rem] px-4 py-4 text-xs font-black uppercase tracking-widest ${activeTab === 'menu' ? 'bg-white text-indigo-950 shadow-sm' : 'text-stone-400'}`}>Pantry</button>
-              <button onClick={() => setActiveTab('rules')} className={`flex-1 rounded-[1.25rem] px-4 py-4 text-xs font-black uppercase tracking-widest ${activeTab === 'rules' ? 'bg-white text-indigo-950 shadow-sm' : 'text-stone-400'}`}>Rules</button>
+          <div className="space-y-6">
+            <div className="flex rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] p-1">
+              <button onClick={() => setActiveTab('menu')} className={`flex-1 rounded-lg px-4 py-3 text-[13px] font-medium transition ${activeTab === 'menu' ? 'bg-[#2F6BFF] text-white' : 'text-[#6B7280]'}`}>Pantry</button>
+              <button onClick={() => setActiveTab('rules')} className={`flex-1 rounded-lg px-4 py-3 text-[13px] font-medium transition ${activeTab === 'rules' ? 'bg-[#2F6BFF] text-white' : 'text-[#6B7280]'}`}>Rules</button>
             </div>
             {activeTab === 'menu' ? menuContent : rulesContent}
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[1.4fr_0.9fr]">
-            <div className="rounded-[2.75rem] border border-stone-100 bg-white p-6 shadow-2xl shadow-stone-200">{menuContent}</div>
-            <div className="rounded-[2.75rem] border border-stone-100 bg-white p-6 shadow-2xl shadow-stone-200">{rulesContent}</div>
+          <div className="grid gap-8 lg:grid-cols-[1.35fr_0.95fr]">
+            <div className="space-y-6">{menuContent}</div>
+            <div>{rulesContent}</div>
           </div>
         )}
 
-        <button onClick={() => generateRecipes(false)} disabled={loading} className="mt-6 flex w-full items-center justify-center gap-4 rounded-[2rem] bg-indigo-950 py-5 font-black text-white shadow-2xl disabled:bg-stone-300">
-          {loading ? <Loader2 className="animate-spin" /> : <Sparkles className="text-orange-400" size={24} />}
-          <span className="text-sm uppercase tracking-[0.25em]">{loading ? 'Simulating...' : 'Construct Menu'}</span>
-        </button>
-        {error && <div className="mt-4 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</div>}
+        <div className="mt-8 flex justify-center">
+          <button onClick={() => generateRecipes(false)} disabled={loading} className="flex w-full max-w-6xl items-center justify-center gap-3 rounded-xl bg-[#2F6BFF] px-6 py-4 text-[15px] font-semibold text-white shadow-[0_10px_24px_rgba(47,107,255,0.18)] transition duration-200 ease-out hover:bg-[#2459D6] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#B9CCFF]">
+            {loading ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
+            <span>{loading ? 'Generating menu...' : 'Construct Menu'}</span>
+          </button>
+        </div>
+        {error && <div className="mt-4 rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-[14px] font-medium text-[#6B7280] shadow-[0_6px_20px_rgba(0,0,0,0.04)]">{error}</div>}
 
         {recipes.length > 0 && (
           <section className="pb-20 pt-10">
-            <div className="mb-8 flex items-end justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Results</p><h2 className="mt-2 text-3xl font-black tracking-tighter text-indigo-950">Executive Menu</h2></div><div className="rounded-full border border-stone-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-stone-400">{isMobileLayout ? 'Portrait Layout' : 'Desktop Layout'}</div></div>
+            <div className="mb-8 flex items-end justify-between gap-4"><div><p className="text-[12px] text-[#6B7280]">Results</p><h2 className="mt-2 text-[30px] font-semibold tracking-[-0.03em] text-[#111111]">Executive Menu</h2></div><div className="rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-[12px] font-medium text-[#6B7280] shadow-[0_6px_20px_rgba(0,0,0,0.04)]">{isMobileLayout ? 'Portrait Layout' : 'Desktop Layout'}</div></div>
             <div className="space-y-8">
               {recipes.map((recipe, index) => (
-                <article key={index} className={`overflow-hidden border border-stone-100 bg-white shadow-xl ${isMobileLayout ? 'rounded-[2.5rem]' : 'rounded-[3rem]'}`}>
-                  <div className={isMobileLayout ? 'border-b border-stone-100 bg-stone-50 px-6 py-6' : 'flex flex-col lg:flex-row'}>
-                    <div className={isMobileLayout ? '' : 'border-b border-stone-100 bg-stone-50/70 p-10 lg:w-[30%] lg:border-b-0 lg:border-r'}>
-                      <span className="mb-3 block text-[10px] font-black uppercase tracking-widest text-indigo-500">{recipe.styleTag}</span>
-                      <h3 className={`${isMobileLayout ? 'text-2xl' : 'text-3xl'} font-black leading-tight text-stone-900`}>{recipe.name}</h3>
-                      {recipe.chineseName && <p className={`${isMobileLayout ? 'text-base' : 'text-lg'} mt-2 italic text-indigo-800/40`}>{recipe.chineseName}</p>}
-                      <p className="mt-4 text-sm font-medium leading-relaxed text-stone-500">{recipe.description}</p>
+                <article key={index} className="overflow-hidden rounded-2xl border border-[#EEEEEE] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.04)] transition duration-200 ease-out hover:shadow-[0_10px_28px_rgba(0,0,0,0.06)]">
+                  <div className={isMobileLayout ? 'border-b border-[#EEEEEE] px-6 py-6' : 'flex flex-col lg:flex-row'}>
+                    <div className={isMobileLayout ? '' : 'border-b border-[#EEEEEE] p-8 lg:w-[30%] lg:border-b-0 lg:border-r'}>
+                      <span className="mb-3 block text-[12px] font-medium text-[#2F6BFF]">{recipe.styleTag}</span>
+                      <h3 className={`${isMobileLayout ? 'text-[24px]' : 'text-[30px]'} font-semibold leading-tight text-[#111111]`}>{recipe.name}</h3>
+                      {recipe.chineseName && <p className={`${isMobileLayout ? 'text-[15px]' : 'text-[16px]'} mt-2 text-[#6B7280]`}>{recipe.chineseName}</p>}
+                      <p className="mt-4 text-[15px] leading-relaxed text-[#6B7280]">{recipe.description}</p>
                       <div className="mt-5 flex flex-wrap gap-2">
-                        <div className="flex items-center rounded-full border border-stone-100 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-stone-400"><Clock size={12} className="mr-2" />{recipe.prepTime}</div>
-                        <div className="flex items-center rounded-full border border-stone-100 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-stone-400"><Flame size={12} className="mr-2" />{recipe.cookTime}</div>
+                        <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Clock size={12} className="mr-2 text-[#2F6BFF]" />{recipe.prepTime}</div>
+                        <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Flame size={12} className="mr-2 text-[#2F6BFF]" />{recipe.cookTime}</div>
                       </div>
                     </div>
-                    <div className={isMobileLayout ? 'space-y-8 px-6 py-6' : 'p-10 lg:w-[70%]'}>
-                      <div className={`grid gap-8 ${isMobileLayout ? 'grid-cols-1' : 'lg:grid-cols-3 lg:gap-10'}`}>
-                        <div><h4 className="mb-4 border-b pb-2 text-[10px] font-black uppercase tracking-widest text-stone-400">Ingredients</h4><ul className="space-y-2 text-sm font-bold text-stone-700">{recipe.ingredients.map((ingredient, itemIndex) => <li key={itemIndex} className="flex items-start"><span className="mr-2 text-indigo-400">/</span>{ingredient}</li>)}</ul></div>
-                        <div><h4 className="mb-4 border-b pb-2 text-[10px] font-black uppercase tracking-widest text-stone-400">Execution</h4><ol className="space-y-3 text-sm">{recipe.instructions.map((step, stepIndex) => <li key={stepIndex} className="flex gap-3"><span className="pt-0.5 text-xs font-black text-indigo-950">{stepIndex + 1}.</span><span className="font-medium leading-relaxed text-stone-500">{step}</span></li>)}</ol></div>
-                        <div><h4 className="mb-4 border-b pb-2 text-[10px] font-black uppercase tracking-widest text-stone-400">Cooking Tips</h4><ul className="space-y-3 text-sm">{recipe.cookingTips?.map((tip, tipIndex) => <li key={tipIndex} className="rounded-2xl bg-stone-50 px-4 py-3 font-medium leading-relaxed text-stone-600">{tip}</li>)}</ul></div>
+                    <div className={isMobileLayout ? 'space-y-8 px-6 py-6' : 'p-8 lg:w-[70%]'}>
+                      <div className={`grid gap-8 ${isMobileLayout ? 'grid-cols-1' : 'lg:grid-cols-3 lg:gap-8'}`}>
+                        <div><h4 className="mb-4 text-[13px] font-medium text-[#6B7280]">Ingredients</h4><ul className="space-y-3 text-[15px] text-[#111111]">{recipe.ingredients.map((ingredient, itemIndex) => <li key={itemIndex} className="flex items-start"><span className="mr-2 mt-1.5 h-1.5 w-1.5 rounded-full bg-[#2F6BFF]" />{ingredient}</li>)}</ul></div>
+                        <div><h4 className="mb-4 text-[13px] font-medium text-[#6B7280]">Execution</h4><ol className="space-y-4 text-[15px]">{recipe.instructions.map((step, stepIndex) => <li key={stepIndex} className="flex gap-3"><span className="pt-0.5 text-[13px] font-semibold text-[#2F6BFF]">{stepIndex + 1}.</span><span className="leading-relaxed text-[#6B7280]">{step}</span></li>)}</ol></div>
+                        <div><h4 className="mb-4 text-[13px] font-medium text-[#6B7280]">Cooking Tips</h4><ul className="space-y-3 text-[15px]">{recipe.cookingTips?.map((tip, tipIndex) => <li key={tipIndex} className="rounded-xl border border-[#E5E7EB] bg-[#F7F8FA] px-4 py-3 leading-relaxed text-[#6B7280]">{tip}</li>)}</ul></div>
                       </div>
                     </div>
                   </div>
-                  {isToddlerFriendly && recipe.toddlerAdaptation && <div className={`${isMobileLayout ? 'px-6 py-5' : 'flex items-start gap-4 p-8'} border-t border-orange-100 bg-orange-50/60`}><div className={`${isMobileLayout ? 'mb-2 flex items-center gap-2' : 'rounded-2xl bg-orange-400 p-3 text-white'} text-[10px] font-black uppercase tracking-widest text-orange-900`}>{isMobileLayout ? <><Baby size={14} />Toddler Adaptation</> : <Baby size={22} />}</div><div><h5 className={`${isMobileLayout ? 'sr-only' : 'mb-1'} text-[10px] font-black uppercase tracking-widest text-orange-900`}>{isMobileLayout ? 'Toddler Adaptation' : 'Toddler Adaptation Advice'}</h5><p className="text-sm font-medium leading-relaxed text-orange-800">{recipe.toddlerAdaptation}</p></div></div>}
+                  {isToddlerFriendly && recipe.toddlerAdaptation && <div className={`${isMobileLayout ? 'px-6 py-5' : 'flex items-start gap-4 p-8'} border-t border-[#E5E7EB] bg-[rgba(47,107,255,0.08)]`}><div className={`${isMobileLayout ? 'mb-2 flex items-center gap-2' : 'rounded-xl bg-[#2F6BFF] p-3 text-white'} text-[12px] font-medium text-[#2F6BFF]`}>{isMobileLayout ? <><Baby size={14} />Toddler Adaptation</> : <Baby size={20} />}</div><div><h5 className={`${isMobileLayout ? 'sr-only' : 'mb-1'} text-[12px] font-medium text-[#2F6BFF]`}>{isMobileLayout ? 'Toddler Adaptation' : 'Toddler Adaptation Advice'}</h5><p className="text-[15px] leading-relaxed text-[#6B7280]">{recipe.toddlerAdaptation}</p></div></div>}
                 </article>
               ))}
             </div>
 
-            <div className="mt-10 overflow-hidden rounded-[3rem] bg-indigo-950 p-8 text-white shadow-2xl">
-              <div className="mb-3 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-orange-400"><Undo2 size={16} /><span>Surgical Tweak</span></div>
-              <h3 className="text-2xl font-black">Refine specific dishes?</h3>
+            <div className="mt-10 overflow-hidden rounded-2xl border border-[#EEEEEE] bg-white p-8 shadow-[0_6px_20px_rgba(0,0,0,0.04)]">
+              <div className="mb-3 flex items-center gap-3 text-[12px] font-medium text-[#2F6BFF]"><Undo2 size={16} /><span>Surgical Tweak</span></div>
+              <h3 className="text-[22px] font-semibold text-[#111111]">Refine specific dishes?</h3>
               <div className={`mt-5 flex gap-4 ${isMobileLayout ? 'flex-col' : 'flex-col lg:flex-row'}`}>
-                <textarea className="min-h-[112px] flex-1 rounded-[2rem] border border-white/10 bg-white/5 p-5 text-sm outline-none placeholder:text-white/20 focus:ring-2 focus:ring-orange-400" placeholder="e.g. Swap salmon for sea bass..." value={followUpComment} onChange={(e) => setFollowUpComment(e.target.value)} />
-                <button onClick={() => generateRecipes(true)} disabled={loading || !followUpComment.trim()} className="flex items-center justify-center gap-3 rounded-[1.75rem] bg-orange-400 px-10 py-5 text-xs font-black uppercase tracking-widest text-indigo-950 disabled:opacity-20"><RefreshCcw size={18} />Update</button>
+                <textarea className="min-h-[112px] flex-1 rounded-xl border border-[#E5E7EB] bg-white p-5 text-[15px] text-[#111111] outline-none placeholder:text-[#6B7280] focus:border-[#2F6BFF] focus:ring-2 focus:ring-[rgba(47,107,255,0.12)]" placeholder="e.g. Swap salmon for sea bass..." value={followUpComment} onChange={(e) => setFollowUpComment(e.target.value)} />
+                <button onClick={() => generateRecipes(true)} disabled={loading || !followUpComment.trim()} className="flex items-center justify-center gap-3 rounded-xl bg-[#2F6BFF] px-10 py-4 text-[14px] font-semibold text-white transition duration-200 ease-out hover:bg-[#2459D6] active:scale-[0.98] disabled:opacity-40"><RefreshCcw size={18} />Update</button>
               </div>
             </div>
           </section>
