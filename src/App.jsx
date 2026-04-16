@@ -198,7 +198,7 @@ export default function App() {
   const [weeklyPlanner, setWeeklyPlanner] = useState(() => (
     WEEK_DAYS.reduce((acc, day) => ({
       ...acc,
-      [day]: { Breakfast: '', Lunch: '', Dinner: '' }
+      [day]: { Breakfast: [''], Lunch: [''], Dinner: [''] }
     }), {})
   ));
   const [savedMealFilter, setSavedMealFilter] = useState('All');
@@ -542,15 +542,27 @@ export default function App() {
     setRecipeAnswer('');
   };
 
-  const assignRecipeToPlannerSlot = (day, slot, recipeId) => {
+  const assignRecipeToPlannerSlot = (day, slot, dishIndex, recipeId) => {
     setWeeklyPlanner((current) => ({
       ...current,
       [day]: {
         ...current[day],
-        [slot]: recipeId
+        [slot]: current[day][slot].map((dishId, index) => (index === dishIndex ? recipeId : dishId))
       }
     }));
   };
+
+  const addDishToPlannerSlot = (day, slot) => {
+    setWeeklyPlanner((current) => ({
+      ...current,
+      [day]: {
+        ...current[day],
+        [slot]: [...current[day][slot], '']
+      }
+    }));
+  };
+
+  const getPlannerSlotRecipes = (day, slot) => weeklyPlanner[day][slot].map((recipeId) => getRecipeById(recipeId));
 
   const buildWeeklyPlanShareText = () => (
     [
@@ -559,9 +571,8 @@ export default function App() {
         '',
         day,
         ...MEAL_TYPES.map((slot) => {
-          const recipeId = weeklyPlanner[day][slot];
-          const recipe = getRecipeById(recipeId);
-          return `${slot}: ${recipe ? recipe.title : 'Unassigned'}`;
+          const recipesForSlot = getPlannerSlotRecipes(day, slot).filter(Boolean);
+          return `${slot}: ${recipesForSlot.length > 0 ? recipesForSlot.map((recipe) => recipe.title).join(' | ') : 'Unassigned'}`;
         })
       ])
     ].join('\n')
@@ -836,43 +847,47 @@ export default function App() {
                   </div>
                   <div className="space-y-3 p-4">
                     {MEAL_TYPES.map((slot) => {
-                      const recipeId = weeklyPlanner[day][slot];
-                      const recipe = getRecipeById(recipeId);
+                      const slotRecipeIds = weeklyPlanner[day][slot];
+                      const assignedRecipes = getPlannerSlotRecipes(day, slot).filter(Boolean);
 
                       return (
-                        <div key={`${day}-${slot}`} className={`space-y-3 rounded-2xl border p-3 transition ${recipe ? 'border-[rgba(107,114,128,0.16)] bg-[rgba(107,114,128,0.05)] shadow-[0_8px_20px_rgba(0,0,0,0.04)]' : 'border-[#E5E7EB] bg-[#F7F8FA]'}`}>
+                        <div key={`${day}-${slot}`} className={`space-y-3 rounded-2xl border p-3 transition ${assignedRecipes.length > 0 ? 'border-[rgba(107,114,128,0.16)] bg-[rgba(107,114,128,0.05)] shadow-[0_8px_20px_rgba(0,0,0,0.04)]' : 'border-[#E5E7EB] bg-[#F7F8FA]'}`}>
                           <div className="flex items-center justify-between gap-2">
                             <label className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">{slot}</label>
-                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${recipe ? 'bg-[#4B5563] text-white' : 'border border-[#E5E7EB] bg-white text-[#6B7280]'}`}>
-                              {recipe ? 'Planned' : 'Open'}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${assignedRecipes.length > 0 ? 'bg-[#4B5563] text-white' : 'border border-[#E5E7EB] bg-white text-[#6B7280]'}`}>
+                                {assignedRecipes.length > 0 ? `${assignedRecipes.length} dish${assignedRecipes.length > 1 ? 'es' : ''}` : 'Open'}
+                              </span>
+                              <button onClick={() => addDishToPlannerSlot(day, slot)} className="flex h-6 w-6 items-center justify-center rounded-full bg-[#4B5563] text-[14px] font-semibold text-white transition hover:bg-[#374151]" aria-label={`Add dish to ${day} ${slot}`}>+</button>
+                            </div>
                           </div>
-                          <select
-                            className={`${selectClass} py-2.5 text-[14px]`}
-                            value={recipeId}
-                            onChange={(e) => assignRecipeToPlannerSlot(day, slot, e.target.value)}
-                          >
-                            <option value="">Unassigned</option>
-                            {recipes.map((savedRecipe) => (
-                              <option key={savedRecipe.id} value={savedRecipe.id}>
-                                {savedRecipe.title}
-                              </option>
-                            ))}
-                          </select>
-                          <div className={`min-h-[56px] rounded-xl border px-3 py-3 ${recipe ? 'border-[rgba(107,114,128,0.14)] bg-white' : 'border-dashed border-[#D1D5DB] bg-[rgba(107,114,128,0.03)]'}`}>
-                            {recipe ? (
-                              <div className="space-y-1">
-                                <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-[#111111]">{recipe.title}</p>
-                                <div className="flex items-center gap-2 text-[11px] text-[#6B7280]">
-                                  <span className="rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize">{recipe.mealType}</span>
-                                  {recipe.isFavorite ? <span className="rounded-full bg-[rgba(245,158,11,0.14)] px-2 py-0.5 text-[#B45309]">Favorite</span> : null}
+                          <div className="space-y-3">
+                            {slotRecipeIds.map((recipeId, dishIndex) => {
+                              const recipe = getRecipeById(recipeId);
+                              return (
+                                <div key={`${day}-${slot}-${dishIndex}`} className={`rounded-xl border px-3 py-3 ${recipe ? 'border-[rgba(107,114,128,0.14)] bg-white' : 'border-dashed border-[#D1D5DB] bg-[rgba(107,114,128,0.03)]'}`}>
+                                  <select className={`${selectClass} py-2.5 text-[14px]`} value={recipeId} onChange={(e) => assignRecipeToPlannerSlot(day, slot, dishIndex, e.target.value)}>
+                                    <option value="">Unassigned</option>
+                                    {recipes.map((savedRecipe) => (
+                                      <option key={savedRecipe.id} value={savedRecipe.id}>{savedRecipe.title}</option>
+                                    ))}
+                                  </select>
+                                  <div className="mt-3 min-h-[56px]">
+                                    {recipe ? (
+                                      <div className="space-y-1">
+                                        <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-[#111111]">{recipe.title}</p>
+                                        <div className="flex items-center gap-2 text-[11px] text-[#6B7280]">
+                                          <span className="rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize">{recipe.mealType}</span>
+                                          {recipe.isFavorite ? <span className="rounded-full bg-[rgba(245,158,11,0.14)] px-2 py-0.5 text-[#B45309]">Favorite</span> : null}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="flex min-h-[28px] items-center text-[13px] leading-relaxed text-[#6B7280]">No recipe assigned</div>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            ) : (
-                              <div className="flex min-h-[28px] items-center text-[13px] leading-relaxed text-[#6B7280]">
-                                No recipe assigned
-                              </div>
-                            )}
+                              );
+                            })}
                           </div>
                         </div>
                       );
@@ -882,71 +897,71 @@ export default function App() {
               ))}
             </div>
           ) : (
-            <div className="overflow-hidden rounded-3xl border border-[#E5E7EB] bg-white shadow-[0_14px_34px_rgba(0,0,0,0.05)]">
-              <div className="grid grid-cols-[140px_repeat(7,minmax(0,1fr))] border-b border-[#E5E7EB] bg-[linear-gradient(180deg,rgba(107,114,128,0.08),rgba(107,114,128,0.02))]">
-                <div className="border-r border-[#E5E7EB] px-4 py-4" />
-                {WEEK_DAYS.map((day) => (
-                  <div key={day} className="border-r border-[#E5E7EB] px-4 py-4 last:border-r-0">
-                    <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Day</p>
-                    <h4 className="mt-1 text-[16px] font-semibold text-[#111111]">{day}</h4>
+            <div className="overflow-x-auto rounded-3xl border border-[#E5E7EB] bg-white shadow-[0_14px_34px_rgba(0,0,0,0.05)]">
+              <div className="min-w-[1700px]">
+                <div className="grid grid-cols-[140px_repeat(7,minmax(0,1fr))] border-b border-[#E5E7EB] bg-[linear-gradient(180deg,rgba(107,114,128,0.08),rgba(107,114,128,0.02))]">
+                  <div className="border-r border-[#E5E7EB] px-4 py-4" />
+                  {WEEK_DAYS.map((day) => (
+                    <div key={day} className="border-r border-[#E5E7EB] px-4 py-4 last:border-r-0">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Day</p>
+                      <h4 className="mt-1 text-[16px] font-semibold text-[#111111]">{day}</h4>
+                    </div>
+                  ))}
+                </div>
+                {MEAL_TYPES.map((slot, rowIndex) => (
+                  <div key={slot} className={`grid grid-cols-[140px_repeat(7,minmax(0,1fr))] ${rowIndex !== MEAL_TYPES.length - 1 ? 'border-b border-[#E5E7EB]' : ''}`}>
+                    <div className="border-r border-[#E5E7EB] bg-[#F7F8FA] px-4 py-5">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Meal Slot</p>
+                      <h5 className="mt-1 text-[15px] font-semibold text-[#111111]">{slot}</h5>
+                    </div>
+                    {WEEK_DAYS.map((day) => {
+                      const slotRecipeIds = weeklyPlanner[day][slot];
+                      const assignedRecipes = getPlannerSlotRecipes(day, slot).filter(Boolean);
+                      return (
+                        <div key={`${day}-${slot}`} className="border-r border-[#E5E7EB] p-4 last:border-r-0">
+                          <div className={`h-full rounded-2xl border p-3 transition ${assignedRecipes.length > 0 ? 'border-[rgba(107,114,128,0.16)] bg-[rgba(107,114,128,0.05)] shadow-[0_8px_20px_rgba(0,0,0,0.04)]' : 'border-[#E5E7EB] bg-[#FBFBFC]'}`}>
+                            <div className="mb-3 flex items-center justify-between gap-2">
+                              <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${assignedRecipes.length > 0 ? 'bg-[#4B5563] text-white' : 'border border-[#E5E7EB] bg-white text-[#6B7280]'}`}>
+                                {assignedRecipes.length > 0 ? `${assignedRecipes.length} dish${assignedRecipes.length > 1 ? 'es' : ''}` : 'Open'}
+                              </span>
+                              <button onClick={() => addDishToPlannerSlot(day, slot)} className="flex h-6 w-6 items-center justify-center rounded-full bg-[#4B5563] text-[14px] font-semibold text-white transition hover:bg-[#374151]" aria-label={`Add dish to ${day} ${slot}`}>+</button>
+                            </div>
+                            <div className="space-y-3">
+                              {slotRecipeIds.map((recipeId, dishIndex) => {
+                                const recipe = getRecipeById(recipeId);
+                                return (
+                                  <div key={`${day}-${slot}-${dishIndex}`} className={`rounded-xl border px-3 py-3 ${recipe ? 'border-[rgba(107,114,128,0.14)] bg-white' : 'border-dashed border-[#D1D5DB] bg-[rgba(107,114,128,0.03)]'}`}>
+                                    <select className={`${selectClass} py-2.5 text-[13px]`} value={recipeId} onChange={(e) => assignRecipeToPlannerSlot(day, slot, dishIndex, e.target.value)}>
+                                      <option value="">Unassigned</option>
+                                      {recipes.map((savedRecipe) => (
+                                        <option key={savedRecipe.id} value={savedRecipe.id}>{savedRecipe.title}</option>
+                                      ))}
+                                    </select>
+                                    <div className="mt-3 min-h-[96px]">
+                                      {recipe ? (
+                                        <div className="space-y-2">
+                                          <p className="break-words text-[13px] font-semibold leading-snug text-[#111111]">{recipe.title}</p>
+                                          <div className="flex flex-wrap gap-2 text-[11px] text-[#6B7280]">
+                                            <span className="rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize">{recipe.mealType}</span>
+                                            {recipe.styleTag ? <span className="break-words rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5">{recipe.styleTag}</span> : null}
+                                            {recipe.isFavorite ? <span className="rounded-full bg-[rgba(245,158,11,0.14)] px-2 py-0.5 text-[#B45309]">Favorite</span> : null}
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="flex h-full items-center text-[13px] leading-relaxed text-[#6B7280]">No recipe assigned</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ))}
               </div>
-              {MEAL_TYPES.map((slot, rowIndex) => (
-                <div
-                  key={slot}
-                  className={`grid grid-cols-[140px_repeat(7,minmax(0,1fr))] ${rowIndex !== MEAL_TYPES.length - 1 ? 'border-b border-[#E5E7EB]' : ''}`}
-                >
-                  <div className="border-r border-[#E5E7EB] bg-[#F7F8FA] px-4 py-5">
-                    <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Meal Slot</p>
-                    <h5 className="mt-1 text-[15px] font-semibold text-[#111111]">{slot}</h5>
-                  </div>
-                  {WEEK_DAYS.map((day) => {
-                    const recipeId = weeklyPlanner[day][slot];
-                    const recipe = getRecipeById(recipeId);
-
-                    return (
-                      <div key={`${day}-${slot}`} className="border-r border-[#E5E7EB] p-4 last:border-r-0">
-                        <div className={`h-full rounded-2xl border p-3 transition ${recipe ? 'border-[rgba(107,114,128,0.16)] bg-[rgba(107,114,128,0.05)] shadow-[0_8px_20px_rgba(0,0,0,0.04)]' : 'border-[#E5E7EB] bg-[#FBFBFC]'}`}>
-                          <div className="mb-3 flex items-center justify-between gap-2">
-                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${recipe ? 'bg-[#4B5563] text-white' : 'border border-[#E5E7EB] bg-white text-[#6B7280]'}`}>
-                              {recipe ? 'Planned' : 'Open'}
-                            </span>
-                            {recipe?.isFavorite ? <span className="rounded-full bg-[rgba(245,158,11,0.14)] px-2 py-1 text-[10px] font-medium text-[#B45309]">Favorite</span> : null}
-                          </div>
-                          <select
-                            className={`${selectClass} py-2.5 text-[13px]`}
-                            value={recipeId}
-                            onChange={(e) => assignRecipeToPlannerSlot(day, slot, e.target.value)}
-                          >
-                            <option value="">Unassigned</option>
-                            {recipes.map((savedRecipe) => (
-                              <option key={savedRecipe.id} value={savedRecipe.id}>
-                                {savedRecipe.title}
-                              </option>
-                            ))}
-                          </select>
-                          <div className={`mt-3 min-h-[88px] rounded-xl border px-3 py-3 ${recipe ? 'border-[rgba(107,114,128,0.14)] bg-white' : 'border-dashed border-[#D1D5DB] bg-[rgba(107,114,128,0.03)]'}`}>
-                            {recipe ? (
-                              <div className="space-y-2">
-                                <p className="line-clamp-3 text-[13px] font-semibold leading-snug text-[#111111]">{recipe.title}</p>
-                                <div className="flex flex-wrap gap-2 text-[11px] text-[#6B7280]">
-                                  <span className="rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize">{recipe.mealType}</span>
-                                  {recipe.styleTag ? <span className="rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5">{recipe.styleTag}</span> : null}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex h-full items-center text-[13px] leading-relaxed text-[#6B7280]">
-                                No recipe assigned
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
             </div>
           )}
         </div>
