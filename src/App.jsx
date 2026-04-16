@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Baby, ChefHat, Clock, Flame, LayoutGrid, Loader2, Menu, Monitor,
-  Plus, RefreshCcw, Settings2, ShieldCheck, Smartphone, Sparkles, Star,
+  MessageSquareMore, Plus, RefreshCcw, Settings2, ShieldCheck, Smartphone, Sparkles, Star,
   Trash2, Undo2, Users, XCircle
 } from 'lucide-react';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
@@ -525,6 +525,12 @@ export default function App() {
     } finally {
       setRecipeQuestionLoading(false);
     }
+  };
+
+  const openRecipeQuestionModal = (recipe) => {
+    setRecipeQuestionTarget(recipe);
+    setRecipeQuestion('');
+    setRecipeAnswer('');
   };
 
   const menuContent = (
@@ -1080,8 +1086,9 @@ export default function App() {
                   setRecipeAnswer('');
                   setActiveSavedRecipeActions(null);
                 }}
-                className="flex w-full items-center justify-center rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-[14px] font-semibold text-[#4B5563] transition duration-200 ease-out hover:bg-[rgba(107,114,128,0.08)]"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-[14px] font-semibold text-[#4B5563] transition duration-200 ease-out hover:bg-[rgba(107,114,128,0.08)]"
               >
+                <MessageSquareMore size={16} />
                 Ask AI Follow-up
               </button>
             </div>
@@ -1116,7 +1123,7 @@ export default function App() {
                 disabled={recipeQuestionLoading || !recipeQuestion.trim()}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#4B5563] px-4 py-3 text-[14px] font-semibold text-white transition duration-200 ease-out hover:bg-[#374151] disabled:cursor-not-allowed disabled:bg-[#D1D5DB]"
               >
-                {recipeQuestionLoading ? <Loader2 className="animate-spin" size={16} /> : null}
+                {recipeQuestionLoading ? <Loader2 className="animate-spin" size={16} /> : <MessageSquareMore size={16} />}
                 <span>{recipeQuestionLoading ? 'Asking AI...' : 'Ask AI'}</span>
               </button>
               {recipeAnswer && (
