@@ -100,6 +100,8 @@ const buildSavedRecipePayload = (recipe, mealType) => ({
   ...recipe
 });
 
+const getRecipeTitle = (recipe, mealType) => buildSavedRecipePayload(recipe, mealType).title;
+
 const useRecipes = () => {
   const [recipes, setRecipes] = useState([]);
 
@@ -156,6 +158,7 @@ export default function App() {
 
   const isMobileLayout = layoutMode === 'mobile';
   const trackClass = 'w-full cursor-pointer accent-[#4B5563]';
+  const getSavedGeneratedRecipe = (recipe) => recipes.find((savedRecipe) => savedRecipe.title === getRecipeTitle(recipe, mealType));
   const filteredSavedRecipes = recipes.filter((recipe) => {
     const matchesMealType = savedMealFilter === 'All' || recipe.mealType?.toLowerCase() === savedMealFilter.toLowerCase();
     const matchesSearch = !savedSearch.trim()
@@ -549,7 +552,28 @@ export default function App() {
                   {generatedRecipes.map((recipe, index) => (
                     <article key={index} className="overflow-hidden rounded-2xl border border-[#EEEEEE] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.04)] transition duration-200 ease-out hover:shadow-[0_10px_28px_rgba(0,0,0,0.06)]">
                       <div className={isMobileLayout ? 'border-b border-[#EEEEEE] px-6 py-6' : 'flex flex-col lg:flex-row'}>
-                        <div className={isMobileLayout ? '' : 'border-b border-[#EEEEEE] p-8 lg:w-[30%] lg:border-b-0 lg:border-r'}>
+                        <div className={`${isMobileLayout ? 'pr-10' : 'border-b border-[#EEEEEE] p-8 pr-14 lg:w-[30%] lg:border-b-0 lg:border-r'} relative`}>
+                          <button
+                            onClick={() => {
+                              const savedRecipe = getSavedGeneratedRecipe(recipe);
+                              if (savedRecipe) {
+                                toggleFavoriteRecipe(savedRecipe.id, savedRecipe.isFavorite);
+                              } else {
+                                saveRecipe({
+                                  ...buildSavedRecipePayload(recipe, mealType),
+                                  isFavorite: true
+                                });
+                              }
+                            }}
+                            className={`absolute right-0 top-0 rounded-full p-2 transition duration-200 ease-out ${
+                              getSavedGeneratedRecipe(recipe)?.isFavorite
+                                ? 'text-[#F59E0B]'
+                                : 'text-[#9CA3AF] hover:bg-[rgba(107,114,128,0.08)] hover:text-[#4B5563]'
+                            } ${isMobileLayout ? 'mr-0 mt-0' : 'mr-8 mt-8'}`}
+                            aria-label={getSavedGeneratedRecipe(recipe)?.isFavorite ? 'Saved as favorite' : 'Save recipe as favorite'}
+                          >
+                            <Star size={20} fill={getSavedGeneratedRecipe(recipe)?.isFavorite ? 'currentColor' : 'none'} />
+                          </button>
                           <span className="mb-3 block text-[12px] font-medium text-[#4B5563]">{recipe.styleTag}</span>
                           <h3 className={`${isMobileLayout ? 'text-[24px]' : 'text-[30px]'} font-semibold leading-tight text-[#111111]`}>{recipe.name}</h3>
                           {recipe.chineseName && <p className={`${isMobileLayout ? 'text-[15px]' : 'text-[16px]'} mt-2 text-[#6B7280]`}>{recipe.chineseName}</p>}
@@ -558,12 +582,6 @@ export default function App() {
                             <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Clock size={12} className="mr-2 text-[#4B5563]" />{recipe.prepTime}</div>
                             <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Flame size={12} className="mr-2 text-[#4B5563]" />{recipe.cookTime}</div>
                           </div>
-                          <button
-                            onClick={() => saveRecipe(buildSavedRecipePayload(recipe, mealType))}
-                            className="mt-5 inline-flex items-center justify-center rounded-xl bg-[#4B5563] px-4 py-2.5 text-[13px] font-semibold text-white transition duration-200 ease-out hover:bg-[#374151] active:scale-[0.98]"
-                          >
-                            Save Recipe
-                          </button>
                         </div>
                         <div className={isMobileLayout ? 'space-y-8 px-6 py-6' : 'p-8 lg:w-[70%]'}>
                           <div className={`grid gap-8 ${isMobileLayout ? 'grid-cols-1' : 'lg:grid-cols-3 lg:gap-8'}`}>
@@ -596,8 +614,8 @@ export default function App() {
 
       {selectedSavedRecipe && (
         <div className="fixed inset-0 z-40 flex items-end justify-center bg-[rgba(17,17,17,0.45)] p-4 sm:items-center">
-          <div className={`max-h-[90vh] w-full overflow-hidden rounded-2xl border border-[#EEEEEE] bg-white shadow-[0_20px_48px_rgba(0,0,0,0.18)] ${isMobileLayout ? 'max-w-md' : 'max-w-4xl'}`}>
-            <div className="flex items-start justify-between border-b border-[#E5E7EB] px-6 py-5">
+          <div className={`flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-2xl border border-[#EEEEEE] bg-white shadow-[0_20px_48px_rgba(0,0,0,0.18)] ${isMobileLayout ? 'max-w-[calc(100vw-2rem)]' : 'max-w-[min(64rem,calc(100vw-2rem))]'}`}>
+            <div className="flex shrink-0 items-start justify-between border-b border-[#E5E7EB] px-6 py-5">
               <div>
                 <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">Saved Recipe</p>
                 <h3 className="mt-2 text-[24px] font-semibold tracking-[-0.03em] text-[#111111]">
@@ -612,7 +630,7 @@ export default function App() {
                 <XCircle size={18} />
               </button>
             </div>
-            <div className="max-h-[calc(90vh-88px)] overflow-y-auto px-6 py-6">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-6">
               <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
                 <div>
                   {selectedSavedRecipe.styleTag && (
