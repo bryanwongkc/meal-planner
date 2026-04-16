@@ -142,7 +142,8 @@ export default function App() {
   const [difficulty, setDifficulty] = useState(DIFFICULTIES[1].value);
   const [dietaryRules, setDietaryRules] = useState([
     { id: 'no-spicy', text: 'No Spicy Food' },
-    { id: 'one-veg', text: '1x Strictly Vegetarian' }
+    { id: 'one-veg', text: '1x Strictly Vegetarian' },
+    { id: 'hk-household', text: 'Authentic Chinese mode: use top 100 Hong Kong household dishes only' }
   ]);
   const [newRuleInput, setNewRuleInput] = useState('');
   const [editingRuleId, setEditingRuleId] = useState(null);
@@ -246,6 +247,7 @@ export default function App() {
       setLoading(false);
       return;
     }
+    const styleLabel = getStyleLabel(styleWeight);
     const activeRules = dietaryRules.map((rule) => rule.text);
     const finalProteins = proteins.map((p) => (p.value === 'CUSTOM_VAL' ? p.customText : p.value)).filter(Boolean);
     const finalFibers = fibers.map((f) => (f.value === 'CUSTOM_VAL' ? f.customText : f.value)).filter(Boolean);
@@ -255,9 +257,12 @@ export default function App() {
     const cookingTipsInstruction = 'Include 3 to 5 short, practical, actionable cookingTips for each dish.';
     const preferenceInstruction = todayPreference.trim() ? `TODAY PREFERENCE: ${todayPreference.trim()}.` : '';
     const flavorHealthInstruction = `FLAVOR VS HEALTH: ${flavorHealthBalance}/100 (${getFlavorHealthLabel(flavorHealthBalance)}). Reflect this balance in ingredient choices, cooking method, seasoning intensity, richness, and oil or sauce usage.`;
+    const hkHouseholdInstruction = styleLabel === 'Authentic Chinese'
+      ? 'Because STYLE is Authentic Chinese, constrain every dish to the top 100 most common Hong Kong household dishes. Do not generate banquet dishes, restaurant-only dishes, or non-household fusion dishes.'
+      : '';
     const prompt = isRefinement
-      ? `Refine the following menu: ${JSON.stringify(generatedRecipes)} FEEDBACK: "${followUpComment}" DINERS: ${dinerCount} TASK: Modify ONLY specific dishes. Keep others exactly the same. MEAL TYPE: ${mealType}. ${preferenceInstruction} ${flavorHealthInstruction} DIETARY: ${activeRules.join(', ')}. TODDLER MODE: ${isToddlerFriendly ? 'ON - update toddlerAdaptation if relevant.' : 'OFF'} STYLE: ${getStyleLabel(styleWeight)}. DIFFICULTY: ${difficulty}. ${cookingTipsInstruction}`
-      : `Executive Chef Role. Create ${dishCount} recipes for ${dinerCount} diners. MEAL TYPE: ${mealType}. ${preferenceInstruction} ${flavorHealthInstruction} STYLE: ${getStyleLabel(styleWeight)} DIFFICULTY: ${difficulty} INGREDIENTS: Proteins (${finalProteins.join(', ')}); Fibers (${finalFibers.join(', ')}) RULES: ${activeRules.join(', ')} SHOPPING: ${location} ${toddlerInstruction} ${cookingTipsInstruction}`;
+      ? `Refine the following menu: ${JSON.stringify(generatedRecipes)} FEEDBACK: "${followUpComment}" DINERS: ${dinerCount} TASK: Modify ONLY specific dishes. Keep others exactly the same. MEAL TYPE: ${mealType}. ${preferenceInstruction} ${flavorHealthInstruction} DIETARY: ${activeRules.join(', ')}. TODDLER MODE: ${isToddlerFriendly ? 'ON - update toddlerAdaptation if relevant.' : 'OFF'} STYLE: ${styleLabel}. DIFFICULTY: ${difficulty}. ${hkHouseholdInstruction} ${cookingTipsInstruction}`
+      : `Executive Chef Role. Create ${dishCount} recipes for ${dinerCount} diners. MEAL TYPE: ${mealType}. ${preferenceInstruction} ${flavorHealthInstruction} STYLE: ${styleLabel} DIFFICULTY: ${difficulty} INGREDIENTS: Proteins (${finalProteins.join(', ')}); Fibers (${finalFibers.join(', ')}) RULES: ${activeRules.join(', ')} SHOPPING: ${location} ${toddlerInstruction} ${hkHouseholdInstruction} ${cookingTipsInstruction}`;
     const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', responseSchema: { type: 'ARRAY', items: { type: 'OBJECT', properties: { name: { type: 'STRING' }, chineseName: { type: 'STRING' }, styleTag: { type: 'STRING' }, description: { type: 'STRING' }, prepTime: { type: 'STRING' }, cookTime: { type: 'STRING' }, ingredients: { type: 'ARRAY', items: { type: 'STRING' } }, instructions: { type: 'ARRAY', items: { type: 'STRING' } }, cookingTips: { type: 'ARRAY', items: { type: 'STRING' } }, toddlerAdaptation: { type: 'STRING' } }, required: ['name', 'styleTag', 'description', 'prepTime', 'cookTime', 'ingredients', 'instructions', 'cookingTips'] } } } };
     const requestRecipes = async (modelName) => {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
