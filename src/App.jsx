@@ -190,6 +190,10 @@ export default function App() {
   const dietaryRules = useDietaryRules();
   const [selectedSavedRecipe, setSelectedSavedRecipe] = useState(null);
   const [activeSavedRecipeActions, setActiveSavedRecipeActions] = useState(null);
+  const [recipeQuestionTarget, setRecipeQuestionTarget] = useState(null);
+  const [recipeQuestion, setRecipeQuestion] = useState('');
+  const [recipeAnswer, setRecipeAnswer] = useState('');
+  const [recipeQuestionLoading, setRecipeQuestionLoading] = useState(false);
   const [savedMealFilter, setSavedMealFilter] = useState('All');
   const [savedSearch, setSavedSearch] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -442,6 +446,84 @@ export default function App() {
       setError('Gemini request failed. Check VITE_GEMINI_API_KEY and deployment logs.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const askRecipeFollowUp = async () => {
+    if (!recipeQuestionTarget || !recipeQuestion.trim()) return;
+
+    setRecipeQuestionLoading(true);
+    setError('');
+    setRecipeAnswer('');
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const model = 'gemini-3.1-flash-lite-preview';
+    if (!apiKey) {
+      setError('Missing Gemini API key. Set VITE_GEMINI_API_KEY in your Vercel environment variables.');
+      setRecipeQuestionLoading(false);
+      return;
+    }
+
+    const prompt = [
+      'ROLE',
+      'You are a practical cooking assistant answering a follow-up question about a specific saved recipe.',
+      '',
+      buildPromptSection('RECIPE CONTEXT', [
+        `TITLE: ${recipeQuestionTarget.title || recipeQuestionTarget.name || 'Unknown'}`,
+        `MEAL_TYPE: ${recipeQuestionTarget.mealType || 'Unknown'}`,
+        `STYLE_TAG: ${recipeQuestionTarget.styleTag || 'Unknown'}`,
+        `DESCRIPTION: ${recipeQuestionTarget.description || 'None'}`,
+        `INGREDIENTS: ${recipeQuestionTarget.ingredients?.join(', ') || 'None'}`,
+        `INSTRUCTIONS: ${recipeQuestionTarget.instructions?.join(' | ') || 'None'}`,
+        `COOKING_TIPS: ${recipeQuestionTarget.cookingTips?.join(' | ') || 'None'}`,
+        `TODDLER_ADAPTATION: ${recipeQuestionTarget.toddlerAdaptation || 'None'}`
+      ]),
+      '',
+      buildPromptSection('USER QUESTION', [
+        recipeQuestion.trim()
+      ]),
+      '',
+      buildPromptSection('ANSWER RULES', [
+        'Answer directly and practically.',
+        'Use the recipe context above.',
+        'Be concise but useful.',
+        'If suggesting changes, state exactly what to change.'
+      ])
+    ].join('\n');
+
+    setLastGeminiPrompt(prompt);
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: 'text/plain' }
+        })
+      });
+
+      let data = null;
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+
+      if (!response.ok) throw new Error(`API call failed with status ${response.status}`);
+
+      const answerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (answerText) {
+        setRecipeAnswer(answerText.trim());
+      } else {
+        throw new Error('API returned no answer payload');
+      }
+    } catch {
+      setError('Gemini follow-up failed. Check VITE_GEMINI_API_KEY and deployment logs.');
+    } finally {
+      setRecipeQuestionLoading(false);
     }
   };
 
@@ -991,6 +1073,58 @@ export default function App() {
               >
                 View Details
               </button>
+              <button
+                onClick={() => {
+                  setRecipeQuestionTarget(activeSavedRecipeActions);
+                  setRecipeQuestion('');
+                  setRecipeAnswer('');
+                  setActiveSavedRecipeActions(null);
+                }}
+                className="flex w-full items-center justify-center rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-[14px] font-semibold text-[#4B5563] transition duration-200 ease-out hover:bg-[rgba(107,114,128,0.08)]"
+              >
+                Ask AI Follow-up
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {recipeQuestionTarget && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(17,17,17,0.35)] p-4 sm:items-center" onClick={() => setRecipeQuestionTarget(null)}>
+          <div className="w-full max-w-lg rounded-2xl border border-[#EEEEEE] bg-white p-4 shadow-[0_20px_48px_rgba(0,0,0,0.18)]" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">Ask AI</p>
+                <h3 className="mt-2 break-words text-[18px] font-semibold text-[#111111]">{recipeQuestionTarget.title}</h3>
+              </div>
+              <button
+                onClick={() => setRecipeQuestionTarget(null)}
+                className="rounded-lg p-2 text-[#6B7280] transition hover:bg-[rgba(107,114,128,0.08)] hover:text-[#4B5563]"
+              >
+                <XCircle size={18} />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <textarea
+                className="min-h-[112px] w-full rounded-xl border border-[#E5E7EB] bg-white p-4 text-[15px] text-[#111111] outline-none placeholder:text-[#6B7280] focus:border-[#6B7280] focus:ring-2 focus:ring-[rgba(107,114,128,0.12)]"
+                placeholder="Ask about substitutions, timing, technique, serving ideas, or adjustments..."
+                value={recipeQuestion}
+                onChange={(e) => setRecipeQuestion(e.target.value)}
+              />
+              <button
+                onClick={askRecipeFollowUp}
+                disabled={recipeQuestionLoading || !recipeQuestion.trim()}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#4B5563] px-4 py-3 text-[14px] font-semibold text-white transition duration-200 ease-out hover:bg-[#374151] disabled:cursor-not-allowed disabled:bg-[#D1D5DB]"
+              >
+                {recipeQuestionLoading ? <Loader2 className="animate-spin" size={16} /> : null}
+                <span>{recipeQuestionLoading ? 'Asking AI...' : 'Ask AI'}</span>
+              </button>
+              {recipeAnswer && (
+                <div className="rounded-xl border border-[#E5E7EB] bg-[#F7F8FA] px-4 py-4">
+                  <p className="mb-2 text-[12px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">Answer</p>
+                  <p className="text-[15px] leading-relaxed text-[#111111]">{recipeAnswer}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
