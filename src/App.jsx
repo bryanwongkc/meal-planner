@@ -858,7 +858,13 @@ export default function App() {
                               <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${assignedRecipes.length > 0 ? 'bg-[#4B5563] text-white' : 'border border-[#E5E7EB] bg-white text-[#6B7280]'}`}>
                                 {assignedRecipes.length > 0 ? `${assignedRecipes.length} dish${assignedRecipes.length > 1 ? 'es' : ''}` : 'Open'}
                               </span>
-                              <button onClick={() => addDishToPlannerSlot(day, slot)} className="flex h-6 w-6 items-center justify-center rounded-full bg-[#4B5563] text-[14px] font-semibold text-white transition hover:bg-[#374151]" aria-label={`Add dish to ${day} ${slot}`}>+</button>
+                              <button
+                                onClick={() => addDishToPlannerSlot(day, slot)}
+                                className="flex items-center justify-center rounded-full bg-[#4B5563] px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-[#374151]"
+                                aria-label={`Add dish to ${day} ${slot}`}
+                              >
+                                + Dish
+                              </button>
                             </div>
                           </div>
                           <div className="space-y-3">
@@ -924,7 +930,13 @@ export default function App() {
                               <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${assignedRecipes.length > 0 ? 'bg-[#4B5563] text-white' : 'border border-[#E5E7EB] bg-white text-[#6B7280]'}`}>
                                 {assignedRecipes.length > 0 ? `${assignedRecipes.length} dish${assignedRecipes.length > 1 ? 'es' : ''}` : 'Open'}
                               </span>
-                              <button onClick={() => addDishToPlannerSlot(day, slot)} className="flex h-6 w-6 items-center justify-center rounded-full bg-[#4B5563] text-[14px] font-semibold text-white transition hover:bg-[#374151]" aria-label={`Add dish to ${day} ${slot}`}>+</button>
+                              <button
+                                onClick={() => addDishToPlannerSlot(day, slot)}
+                                className="flex items-center justify-center rounded-full bg-[#4B5563] px-2.5 py-1 text-[11px] font-semibold text-white transition hover:bg-[#374151]"
+                                aria-label={`Add dish to ${day} ${slot}`}
+                              >
+                                + Dish
+                              </button>
                             </div>
                             <div className="space-y-3">
                               {slotRecipeIds.map((recipeId, dishIndex) => {
