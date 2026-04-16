@@ -327,18 +327,18 @@ export default function App() {
 
   const getStyleInstruction = (styleLabel) => {
     if (styleLabel === 'Authentic Chinese') {
-      return 'STYLE RULES: Keep the dishes fully Chinese in flavor, technique, naming, ingredient pairing, seasoning profile, and presentation. Do not westernize the dishes or blend in fusion elements.';
+      return 'STYLE RULES: Keep the dishes fully Chinese in flavor, technique, naming, ingredient pairing, seasoning profile, and presentation. Do not westernize the dishes or blend in fusion elements. If a chineseName is provided, it must be written only in Traditional Chinese characters.';
     }
     if (styleLabel === 'Chinese-leaning Fusion') {
-      return 'STYLE RULES: Keep the dishes clearly Chinese-led, with only light fusion influence. Chinese techniques, seasonings, and structure should dominate.';
+      return 'STYLE RULES: Keep the dishes clearly Chinese-led, with only light fusion influence. Chinese techniques, seasonings, and structure should dominate. If a chineseName is provided, it must be written only in Traditional Chinese characters.';
     }
     if (styleLabel === 'Global Fusion') {
-      return 'STYLE RULES: Allow balanced cross-cultural fusion. The dish may combine Chinese and non-Chinese influences in a deliberate way.';
+      return 'STYLE RULES: Allow balanced cross-cultural fusion. The dish may combine Chinese and non-Chinese influences in a deliberate way. If a chineseName is provided, it must be written only in Traditional Chinese characters.';
     }
     if (styleLabel === 'Western-leaning Fusion') {
-      return 'STYLE RULES: Keep the dishes primarily Western in composition while still allowing some Chinese or Asian influence. The result should still read as intentional fusion.';
+      return 'STYLE RULES: Keep the dishes primarily Western in composition while still allowing some Chinese or Asian influence. The result should still read as intentional fusion. If a chineseName is provided, it must be written only in Traditional Chinese characters.';
     }
-    return 'STYLE RULES: Generate fully Western dishes only. Do not make them fusion. Do not use Chinese naming, Chinese seasoning frameworks, wok-based Chinese technique, or Chinese dish structures unless explicitly requested elsewhere.';
+    return 'STYLE RULES: Generate fully Western dishes only. Do not make them fusion. Do not use Chinese naming, Chinese seasoning frameworks, wok-based Chinese technique, or Chinese dish structures unless explicitly requested elsewhere. If a chineseName is provided, it must be written only in Traditional Chinese characters.';
   };
 
   const buildPromptSection = (title, lines) => {
@@ -398,6 +398,7 @@ export default function App() {
       `Return exactly ${dishCount} recipe objects as JSON.`,
       'Each recipe must match the requested meal type, style, and dietary constraints.',
       'Use the provided proteins and vegetables as primary anchors where practical.',
+      'If chineseName is included, use Traditional Chinese only. Never use Simplified Chinese.',
       "Keep the response schema-compatible with the required JSON fields only."
     ]);
     const refinementSection = isRefinement
@@ -827,20 +828,23 @@ export default function App() {
           </div>
           <div className={`grid ${isMobileLayout ? 'gap-3 grid-cols-1' : 'gap-4 grid-cols-7'}`}>
             {WEEK_DAYS.map((day) => (
-              <div key={day} className="rounded-2xl border border-[#E5E7EB] bg-[#F7F8FA] p-3">
-                <div className="mb-3 border-b border-[#E5E7EB] pb-2">
-                  <h4 className="text-[15px] font-semibold text-[#111111]">{day}</h4>
+              <div key={day} className="overflow-hidden rounded-3xl border border-[#E5E7EB] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+                <div className="border-b border-[#E5E7EB] bg-[linear-gradient(180deg,rgba(107,114,128,0.08),rgba(107,114,128,0.02))] px-4 py-4">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Day Plan</p>
+                  <h4 className="mt-1 text-[16px] font-semibold text-[#111111]">{day}</h4>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-3 p-4">
                   {MEAL_TYPES.map((slot) => {
                     const recipeId = weeklyPlanner[day][slot];
                     const recipe = getRecipeById(recipeId);
 
                     return (
-                      <div key={`${day}-${slot}`} className="space-y-2 rounded-xl border border-[#E5E7EB] bg-white p-3">
+                      <div key={`${day}-${slot}`} className={`space-y-3 rounded-2xl border p-3 transition ${recipe ? 'border-[rgba(107,114,128,0.16)] bg-[rgba(107,114,128,0.05)] shadow-[0_8px_20px_rgba(0,0,0,0.04)]' : 'border-[#E5E7EB] bg-[#F7F8FA]'}`}>
                         <div className="flex items-center justify-between gap-2">
-                          <label className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#6B7280]">{slot}</label>
-                          {recipe && <span className="rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-1 text-[10px] font-medium text-[#4B5563]">Assigned</span>}
+                          <label className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">{slot}</label>
+                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${recipe ? 'bg-[#4B5563] text-white' : 'bg-white text-[#6B7280] border border-[#E5E7EB]'}`}>
+                            {recipe ? 'Planned' : 'Open'}
+                          </span>
                         </div>
                         <select
                           className={`${selectClass} py-2.5 text-[14px]`}
@@ -854,8 +858,20 @@ export default function App() {
                             </option>
                           ))}
                         </select>
-                        <div className="min-h-[36px] text-[13px] leading-relaxed text-[#6B7280]">
-                          {recipe ? recipe.title : 'No recipe assigned'}
+                        <div className={`min-h-[56px] rounded-xl border px-3 py-3 ${recipe ? 'border-[rgba(107,114,128,0.14)] bg-white' : 'border-dashed border-[#D1D5DB] bg-[rgba(107,114,128,0.03)]'}`}>
+                          {recipe ? (
+                            <div className="space-y-1">
+                              <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-[#111111]">{recipe.title}</p>
+                              <div className="flex items-center gap-2 text-[11px] text-[#6B7280]">
+                                <span className="rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize">{recipe.mealType}</span>
+                                {recipe.isFavorite ? <span className="rounded-full bg-[rgba(245,158,11,0.14)] px-2 py-0.5 text-[#B45309]">Favorite</span> : null}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex min-h-[28px] items-center text-[13px] leading-relaxed text-[#6B7280]">
+                              No recipe assigned
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
