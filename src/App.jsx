@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Baby, ChefHat, Clock, Flame, LayoutGrid, Loader2, Monitor,
+  Baby, ChefHat, Clock, Flame, LayoutGrid, Loader2, Menu, Monitor,
   Plus, RefreshCcw, Settings2, ShieldCheck, Smartphone, Sparkles, Star,
   Trash2, Undo2, Users, XCircle
 } from 'lucide-react';
@@ -127,8 +127,8 @@ const useRecipes = () => {
 
 export default function App() {
   const [layoutMode, setLayoutMode] = useState(typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop');
-  const [activeTab, setActiveTab] = useState('menu');
-  const [mainTab, setMainTab] = useState('planner');
+  const [currentView, setCurrentView] = useState('main');
+  const [isNavOpen, setIsNavOpen] = useState(false);
   const [dishCount, setDishCount] = useState(3);
   const [dinerCount, setDinerCount] = useState(3);
   const [isToddlerFriendly, setIsToddlerFriendly] = useState(false);
@@ -515,6 +515,13 @@ export default function App() {
         <div className="mx-auto w-full max-w-6xl min-w-0">
           <div className={`flex min-w-0 ${isMobileLayout ? 'items-start justify-between gap-3' : 'items-center justify-between gap-6'}`}>
             <div className="flex min-w-0 items-center gap-4">
+              <button
+                onClick={() => setIsNavOpen(true)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E5E7EB] bg-white text-[#4B5563] shadow-[0_6px_20px_rgba(0,0,0,0.04)] transition hover:bg-[#F7F8FA]"
+                aria-label="Open navigation menu"
+              >
+                <Menu size={18} />
+              </button>
               <div className={`rounded-2xl border border-[#E5E7EB] bg-white text-[#111111] shadow-[0_6px_20px_rgba(0,0,0,0.04)] ${isMobileLayout ? 'p-2.5' : 'p-3'}`}><ChefHat size={isMobileLayout ? 22 : 28} /></div>
               <div className="min-w-0"><h1 className={`break-words font-bold tracking-[-0.03em] text-[#111111] ${isMobileLayout ? 'text-[24px]' : 'text-[30px]'}`}>Culina<span className="text-[#4B5563]">Fusion</span></h1><p className="mt-1 text-[12px] text-[#6B7280]">Tailored gastronomy engine</p></div>
             </div>
@@ -528,28 +535,56 @@ export default function App() {
         </div>
       </header>
 
-      <main className={`mx-auto w-full min-w-0 px-4 ${isMobileLayout ? 'max-w-md pt-5' : 'max-w-6xl pt-8'}`}>
-        <div className={`${isMobileLayout ? 'mb-4' : 'mb-6'} flex rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] p-1`}>
-          <button onClick={() => setMainTab('planner')} className={`flex-1 rounded-lg px-4 py-3 text-[13px] font-medium transition ${mainTab === 'planner' ? 'bg-[#4B5563] text-white' : 'text-[#6B7280]'}`}>Planner</button>
-          <button onClick={() => setMainTab('saved')} className={`flex-1 rounded-lg px-4 py-3 text-[13px] font-medium transition ${mainTab === 'saved' ? 'bg-[#4B5563] text-white' : 'text-[#6B7280]'}`}>Saved</button>
+      {isNavOpen && (
+        <div className="fixed inset-0 z-40 bg-[rgba(17,17,17,0.35)]" onClick={() => setIsNavOpen(false)}>
+          <aside
+            className="h-full w-[min(18rem,82vw)] border-r border-[#E5E7EB] bg-white px-4 py-5 shadow-[0_20px_48px_rgba(0,0,0,0.18)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">Navigate</p>
+                <h2 className="mt-1 text-[20px] font-semibold text-[#111111]">CulinaFusion</h2>
+              </div>
+              <button
+                onClick={() => setIsNavOpen(false)}
+                className="rounded-lg p-2 text-[#6B7280] transition hover:bg-[rgba(107,114,128,0.08)] hover:text-[#4B5563]"
+                aria-label="Close navigation menu"
+              >
+                <XCircle size={18} />
+              </button>
+            </div>
+            <div className="space-y-2">
+              {[
+                { id: 'main', label: 'Main Page', icon: LayoutGrid },
+                { id: 'saved', label: 'Saved Recipes', icon: Star },
+                { id: 'rules', label: 'Dietary Rules', icon: ShieldCheck }
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => {
+                    setCurrentView(id);
+                    setIsNavOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[14px] font-medium transition ${
+                    currentView === id
+                      ? 'bg-[#4B5563] text-white'
+                      : 'text-[#4B5563] hover:bg-[rgba(107,114,128,0.08)]'
+                  }`}
+                >
+                  <Icon size={16} />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          </aside>
         </div>
+      )}
 
-        {mainTab === 'planner' ? (
+      <main className={`mx-auto w-full min-w-0 px-4 ${isMobileLayout ? 'max-w-md pt-5' : 'max-w-6xl pt-8'}`}>
+        {currentView === 'main' ? (
           <>
-            {isMobileLayout ? (
-              <div className="space-y-4">
-                <div className="flex rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] p-1">
-                  <button onClick={() => setActiveTab('menu')} className={`flex-1 rounded-lg px-4 py-3 text-[13px] font-medium transition ${activeTab === 'menu' ? 'bg-[#4B5563] text-white' : 'text-[#6B7280]'}`}>Pantry</button>
-                  <button onClick={() => setActiveTab('rules')} className={`flex-1 rounded-lg px-4 py-3 text-[13px] font-medium transition ${activeTab === 'rules' ? 'bg-[#4B5563] text-white' : 'text-[#6B7280]'}`}>Rules</button>
-                </div>
-                {activeTab === 'menu' ? menuContent : rulesContent}
-              </div>
-            ) : (
-              <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.95fr)]">
-                <div className="min-w-0 space-y-6">{menuContent}</div>
-                <div className="min-w-0">{rulesContent}</div>
-              </div>
-            )}
+            <div className="min-w-0">{menuContent}</div>
 
             <div className={`${isMobileLayout ? 'mt-5' : 'mt-8'} flex justify-center`}>
               <button onClick={() => generateRecipes(false)} disabled={loading} className={`flex w-full max-w-6xl items-center justify-center gap-3 rounded-xl bg-[#4B5563] font-semibold text-white shadow-[0_10px_24px_rgba(75,85,99,0.18)] transition duration-200 ease-out hover:bg-[#374151] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#D1D5DB] ${isMobileLayout ? 'px-5 py-3.5 text-[14px]' : 'px-6 py-4 text-[15px]'}`}>
@@ -621,8 +656,10 @@ export default function App() {
               </section>
             )}
           </>
-        ) : (
+        ) : currentView === 'saved' ? (
           savedRecipesContent
+        ) : (
+          rulesContent
         )}
       </main>
 
