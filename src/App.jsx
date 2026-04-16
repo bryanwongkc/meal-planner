@@ -151,6 +151,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [followUpComment, setFollowUpComment] = useState('');
+  const [lastGeminiPrompt, setLastGeminiPrompt] = useState('');
   const recipes = useRecipes();
   const [selectedSavedRecipe, setSelectedSavedRecipe] = useState(null);
   const [savedMealFilter, setSavedMealFilter] = useState('All');
@@ -240,6 +241,32 @@ export default function App() {
     return 'Maximum richness and flavor';
   };
 
+  const getMealTypeInstruction = (selectedMealType) => {
+    if (selectedMealType === 'Breakfast') {
+      return 'MEAL TYPE RULES: Generate breakfast-appropriate dishes only. Favor lighter morning cooking, congee, eggs, toast-based items, oats, noodles, porridges, sandwiches, breakfast plates, simple soups, or gentle stir-fries. Avoid dinner-like heavy braises, banquet dishes, and large multi-course mains unless clearly breakfast-appropriate.';
+    }
+    if (selectedMealType === 'Lunch') {
+      return 'MEAL TYPE RULES: Generate lunch-appropriate dishes only. Favor balanced, practical midday meals that are satisfying but not overly heavy. Avoid breakfast dishes and avoid dinner-only celebratory or long-braise dishes unless they still feel realistic for lunch.';
+    }
+    return 'MEAL TYPE RULES: Generate dinner-appropriate dishes only. Favor fuller savory dishes, home-style mains, richer soups, braises, stir-fries, roasted dishes, or complete evening meal compositions. Avoid breakfast-specific dishes.';
+  };
+
+  const getStyleInstruction = (styleLabel) => {
+    if (styleLabel === 'Authentic Chinese') {
+      return 'STYLE RULES: Keep the dishes fully Chinese in flavor, technique, naming, ingredient pairing, seasoning profile, and presentation. Do not westernize the dishes or blend in fusion elements.';
+    }
+    if (styleLabel === 'Chinese-leaning Fusion') {
+      return 'STYLE RULES: Keep the dishes clearly Chinese-led, with only light fusion influence. Chinese techniques, seasonings, and structure should dominate.';
+    }
+    if (styleLabel === 'Global Fusion') {
+      return 'STYLE RULES: Allow balanced cross-cultural fusion. The dish may combine Chinese and non-Chinese influences in a deliberate way.';
+    }
+    if (styleLabel === 'Western-leaning Fusion') {
+      return 'STYLE RULES: Keep the dishes primarily Western in composition while still allowing some Chinese or Asian influence. The result should still read as intentional fusion.';
+    }
+    return 'STYLE RULES: Generate fully Western dishes only. Do not make them fusion. Do not use Chinese naming, Chinese seasoning frameworks, wok-based Chinese technique, or Chinese dish structures unless explicitly requested elsewhere.';
+  };
+
   const generateRecipes = async (isRefinement = false) => {
     setLoading(true);
     setError('');
@@ -260,12 +287,15 @@ export default function App() {
     const cookingTipsInstruction = 'Include 3 to 5 short, practical, actionable cookingTips for each dish.';
     const preferenceInstruction = todayPreference.trim() ? `TODAY PREFERENCE: ${todayPreference.trim()}.` : '';
     const flavorHealthInstruction = `FLAVOR VS HEALTH: ${flavorHealthBalance}/100 (${getFlavorHealthLabel(flavorHealthBalance)}). Reflect this balance in ingredient choices, cooking method, seasoning intensity, richness, and oil or sauce usage.`;
+    const mealTypeInstruction = getMealTypeInstruction(mealType);
+    const styleInstruction = getStyleInstruction(styleLabel);
     const hkHouseholdInstruction = styleLabel === 'Authentic Chinese'
       ? 'Because STYLE is Authentic Chinese, constrain every dish to the top 100 most common Hong Kong household dishes. Do not generate banquet dishes, restaurant-only dishes, or non-household fusion dishes.'
       : '';
     const prompt = isRefinement
-      ? `Refine the following menu: ${JSON.stringify(generatedRecipes)} FEEDBACK: "${followUpComment}" DINERS: ${dinerCount} TASK: Modify ONLY specific dishes. Keep others exactly the same. MEAL TYPE: ${mealType}. ${preferenceInstruction} ${flavorHealthInstruction} DIETARY: ${activeRules.join(', ')}. TODDLER MODE: ${isToddlerFriendly ? 'ON - update toddlerAdaptation if relevant.' : 'OFF'} STYLE: ${styleLabel}. DIFFICULTY: ${difficulty}. ${hkHouseholdInstruction} ${cookingTipsInstruction}`
-      : `Executive Chef Role. Create ${dishCount} recipes for ${dinerCount} diners. MEAL TYPE: ${mealType}. ${preferenceInstruction} ${flavorHealthInstruction} STYLE: ${styleLabel} DIFFICULTY: ${difficulty} INGREDIENTS: Proteins (${finalProteins.join(', ')}); Fibers (${finalFibers.join(', ')}) RULES: ${activeRules.join(', ')} SHOPPING: ${location} ${toddlerInstruction} ${hkHouseholdInstruction} ${cookingTipsInstruction}`;
+      ? `Refine the following menu: ${JSON.stringify(generatedRecipes)} FEEDBACK: "${followUpComment}" DINERS: ${dinerCount} TASK: Modify ONLY specific dishes. Keep others exactly the same. MEAL TYPE: ${mealType}. ${mealTypeInstruction} ${preferenceInstruction} ${flavorHealthInstruction} DIETARY: ${activeRules.join(', ')}. TODDLER MODE: ${isToddlerFriendly ? 'ON - update toddlerAdaptation if relevant.' : 'OFF'} STYLE: ${styleLabel}. ${styleInstruction} DIFFICULTY: ${difficulty}. ${hkHouseholdInstruction} ${cookingTipsInstruction}`
+      : `Executive Chef Role. Create ${dishCount} recipes for ${dinerCount} diners. MEAL TYPE: ${mealType}. ${mealTypeInstruction} ${preferenceInstruction} ${flavorHealthInstruction} STYLE: ${styleLabel}. ${styleInstruction} DIFFICULTY: ${difficulty} INGREDIENTS: Proteins (${finalProteins.join(', ')}); Fibers (${finalFibers.join(', ')}) RULES: ${activeRules.join(', ')} SHOPPING: ${location} ${toddlerInstruction} ${hkHouseholdInstruction} ${cookingTipsInstruction}`;
+    setLastGeminiPrompt(prompt);
     const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', responseSchema: { type: 'ARRAY', items: { type: 'OBJECT', properties: { name: { type: 'STRING' }, chineseName: { type: 'STRING' }, styleTag: { type: 'STRING' }, description: { type: 'STRING' }, prepTime: { type: 'STRING' }, cookTime: { type: 'STRING' }, ingredients: { type: 'ARRAY', items: { type: 'STRING' } }, instructions: { type: 'ARRAY', items: { type: 'STRING' } }, cookingTips: { type: 'ARRAY', items: { type: 'STRING' } }, toddlerAdaptation: { type: 'STRING' } }, required: ['name', 'styleTag', 'description', 'prepTime', 'cookTime', 'ingredients', 'instructions', 'cookingTips'] } } } };
     const requestRecipes = async (modelName) => {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
@@ -509,6 +539,26 @@ export default function App() {
     </section>
   );
 
+  const developerContent = (
+    <section className={`min-w-0 ${isMobileLayout ? 'space-y-3' : 'space-y-5'} pb-20 pt-2`}>
+      <Section title="Developer" icon={Menu} compact={isMobileLayout}>
+        <div className={isMobileLayout ? 'space-y-4' : 'space-y-5'}>
+          <div>
+            <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">Last Gemini Prompt</p>
+            <p className="mt-2 text-[14px] leading-relaxed text-[#6B7280]">
+              This shows the exact prompt most recently sent to the Gemini API.
+            </p>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-[#F7F8FA]">
+            <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap break-words px-4 py-4 text-[13px] leading-relaxed text-[#111111]">
+              {lastGeminiPrompt || 'No Gemini prompt has been sent yet.'}
+            </pre>
+          </div>
+        </div>
+      </Section>
+    </section>
+  );
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#F7F8FA] pb-20 text-[#111111]">
       <header className={`sticky top-0 z-30 border-b border-[rgba(255,255,255,0.4)] bg-[rgba(255,255,255,0.6)] px-4 backdrop-blur-[12px] ${isMobileLayout ? 'py-3' : 'py-4'}`}>
@@ -558,7 +608,8 @@ export default function App() {
               {[
                 { id: 'main', label: 'Main Page', icon: LayoutGrid },
                 { id: 'saved', label: 'Saved Recipes', icon: Star },
-                { id: 'rules', label: 'Dietary Rules', icon: ShieldCheck }
+                { id: 'rules', label: 'Dietary Rules', icon: ShieldCheck },
+                { id: 'developer', label: 'Developer', icon: Menu }
               ].map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -658,8 +709,10 @@ export default function App() {
           </>
         ) : currentView === 'saved' ? (
           savedRecipesContent
-        ) : (
+        ) : currentView === 'rules' ? (
           rulesContent
+        ) : (
+          developerContent
         )}
       </main>
 
