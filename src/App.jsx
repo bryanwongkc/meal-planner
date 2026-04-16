@@ -338,18 +338,6 @@ export default function App() {
               ))}
             </div>
           </div>
-          <div className="space-y-2">
-            <label className="text-[12px] font-medium text-[#6B7280]">Today Preference</label>
-            <div>
-              <input
-                type="text"
-                placeholder="e.g. soupy, light, comforting, crispy..."
-                className={inputClass}
-                value={todayPreference}
-                onChange={(e) => setTodayPreference(e.target.value)}
-              />
-            </div>
-          </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-4">
               <label className="text-[12px] font-medium text-[#6B7280]">Flavor vs Health</label>
@@ -380,6 +368,18 @@ export default function App() {
           <div className={`grid gap-4 ${isMobileLayout ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <div className="space-y-2"><label className="text-[12px] font-medium text-[#6B7280]">Technique Level</label><select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className={selectClass}>{DIFFICULTIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
             <div className="space-y-2"><label className="text-[12px] font-medium text-[#6B7280]">Supply Source</label><select value={location} onChange={(e) => setLocation(e.target.value)} className={selectClass}>{LOCATIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[12px] font-medium text-[#6B7280]">Today Preference</label>
+            <div>
+              <input
+                type="text"
+                placeholder="e.g. soupy, light, comforting, crispy..."
+                className={inputClass}
+                value={todayPreference}
+                onChange={(e) => setTodayPreference(e.target.value)}
+              />
+            </div>
           </div>
         </div>
       </section>
