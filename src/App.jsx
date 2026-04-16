@@ -4,7 +4,7 @@ import {
   Plus, RefreshCcw, Settings2, ShieldCheck, Smartphone, Sparkles, Star,
   Trash2, Undo2, Users, XCircle
 } from 'lucide-react';
-import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase/config';
 
 const PROTEIN_OPTIONS = ['Pork (Pork Belly, Sliced Pork)', 'Chicken (Thighs, Breast, Wings)', 'Beef (Flank, Sirloin, Short Ribs)', 'Tofu (Firm, Soft, Silken)', 'Fish (Whole, Fillets)', 'Shrimp / Prawns', 'Duck', 'Eggs', 'Scallops', 'Lamb', 'CUSTOM_VAL'];
@@ -13,6 +13,11 @@ const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner'];
 const SAVED_FILTERS = ['All', ...MEAL_TYPES];
 const LOCATIONS = [{ value: 'supermarket', label: 'Supermarket' }, { value: 'wet market', label: 'Wet Market' }];
 const DIFFICULTIES = [{ value: 'Very Easy', label: 'Very Easy (Fusion/Western only)' }, { value: 'Easy', label: 'Easy' }, { value: 'Medium', label: 'Medium' }, { value: 'Hard', label: 'Hard' }];
+const DEFAULT_DIETARY_RULES = [
+  { id: 'no-spicy', text: 'No Spicy Food', order: 0 },
+  { id: 'one-veg', text: '1x Strictly Vegetarian', order: 1 },
+  { id: 'hk-household', text: 'Authentic Chinese mode: use top 100 Hong Kong household dishes only', order: 2 }
+];
 
 const card = 'min-w-0 rounded-2xl border border-[#EEEEEE] bg-white p-6 shadow-[0_6px_20px_rgba(0,0,0,0.04)]';
 const inputClass = 'w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[15px] font-medium text-[#111111] outline-none transition focus:border-[#6B7280] focus:ring-2 focus:ring-[rgba(107,114,128,0.12)] placeholder:text-[#6B7280]';
@@ -125,6 +130,40 @@ const useRecipes = () => {
   return recipes;
 };
 
+const useDietaryRules = () => {
+  const [rules, setRules] = useState([]);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, 'dietaryRules'),
+      orderBy('order', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      if (snapshot.empty) {
+        await Promise.all(
+          DEFAULT_DIETARY_RULES.map((rule) => setDoc(doc(db, 'dietaryRules', rule.id), {
+            text: rule.text,
+            order: rule.order,
+            createdAt: serverTimestamp()
+          }))
+        );
+        return;
+      }
+
+      const data = snapshot.docs.map((ruleDoc) => ({
+        id: ruleDoc.id,
+        ...ruleDoc.data()
+      }));
+      setRules(data);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  return rules;
+};
+
 export default function App() {
   const [layoutMode, setLayoutMode] = useState(typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop');
   const [currentView, setCurrentView] = useState('main');
@@ -140,11 +179,6 @@ export default function App() {
   const [todayPreference, setTodayPreference] = useState('');
   const [location, setLocation] = useState(LOCATIONS[0].value);
   const [difficulty, setDifficulty] = useState(DIFFICULTIES[1].value);
-  const [dietaryRules, setDietaryRules] = useState([
-    { id: 'no-spicy', text: 'No Spicy Food' },
-    { id: 'one-veg', text: '1x Strictly Vegetarian' },
-    { id: 'hk-household', text: 'Authentic Chinese mode: use top 100 Hong Kong household dishes only' }
-  ]);
   const [newRuleInput, setNewRuleInput] = useState('');
   const [editingRuleId, setEditingRuleId] = useState(null);
   const [generatedRecipes, setGeneratedRecipes] = useState([]);
@@ -153,6 +187,7 @@ export default function App() {
   const [followUpComment, setFollowUpComment] = useState('');
   const [lastGeminiPrompt, setLastGeminiPrompt] = useState('');
   const recipes = useRecipes();
+  const dietaryRules = useDietaryRules();
   const [selectedSavedRecipe, setSelectedSavedRecipe] = useState(null);
   const [savedMealFilter, setSavedMealFilter] = useState('All');
   const [savedSearch, setSavedSearch] = useState('');
@@ -184,15 +219,19 @@ export default function App() {
     }
   }, [recipes, selectedSavedRecipe]);
 
-  const saveCustomRule = () => {
+  const saveCustomRule = async () => {
     if (!newRuleInput.trim()) return;
     if (editingRuleId !== null) {
-      setDietaryRules(dietaryRules.map((rule) => (
-        rule.id === editingRuleId ? { ...rule, text: newRuleInput.trim() } : rule
-      )));
+      await updateDoc(doc(db, 'dietaryRules', editingRuleId), {
+        text: newRuleInput.trim()
+      });
       setEditingRuleId(null);
     } else {
-      setDietaryRules([...dietaryRules, { id: Date.now(), text: newRuleInput.trim() }]);
+      await addDoc(collection(db, 'dietaryRules'), {
+        text: newRuleInput.trim(),
+        order: dietaryRules.length,
+        createdAt: serverTimestamp()
+      });
     }
     setNewRuleInput('');
   };
@@ -204,8 +243,8 @@ export default function App() {
     setEditingRuleId(null);
     setNewRuleInput('');
   };
-  const removeCustomRule = (id) => {
-    setDietaryRules(dietaryRules.filter((rule) => rule.id !== id));
+  const removeCustomRule = async (id) => {
+    await deleteDoc(doc(db, 'dietaryRules', id));
     if (editingRuleId === id) cancelEditingRule();
   };
   const addIngredient = (type) => {
