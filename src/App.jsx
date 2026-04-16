@@ -513,18 +513,16 @@ export default function App() {
     <div className="min-h-screen overflow-x-hidden bg-[#F7F8FA] pb-20 text-[#111111]">
       <header className={`sticky top-0 z-30 border-b border-[rgba(255,255,255,0.4)] bg-[rgba(255,255,255,0.6)] px-4 backdrop-blur-[12px] ${isMobileLayout ? 'py-3' : 'py-4'}`}>
         <div className="mx-auto w-full max-w-6xl min-w-0">
-          <div className={`flex min-w-0 ${isMobileLayout ? 'flex-col gap-3' : 'items-center justify-between gap-6'}`}>
+          <div className={`flex min-w-0 ${isMobileLayout ? 'items-start justify-between gap-3' : 'items-center justify-between gap-6'}`}>
             <div className="flex min-w-0 items-center gap-4">
               <div className={`rounded-2xl border border-[#E5E7EB] bg-white text-[#111111] shadow-[0_6px_20px_rgba(0,0,0,0.04)] ${isMobileLayout ? 'p-2.5' : 'p-3'}`}><ChefHat size={isMobileLayout ? 22 : 28} /></div>
               <div className="min-w-0"><h1 className={`break-words font-bold tracking-[-0.03em] text-[#111111] ${isMobileLayout ? 'text-[24px]' : 'text-[30px]'}`}>Culina<span className="text-[#4B5563]">Fusion</span></h1><p className="mt-1 text-[12px] text-[#6B7280]">Tailored gastronomy engine</p></div>
             </div>
-            <div className={`flex min-w-0 ${isMobileLayout ? 'flex-wrap' : 'flex-wrap items-center justify-end'} gap-3`}>
-              <div className="flex max-w-full rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] p-1">
-                <button onClick={() => setLayoutMode('mobile')} className={`inline-flex items-center rounded-lg px-3 py-2 text-[13px] font-medium transition ${isMobileLayout ? 'bg-[#4B5563] text-white' : 'text-[#6B7280]'}`}><Smartphone size={14} className="mr-2" />Portrait</button>
-                <button onClick={() => setLayoutMode('desktop')} className={`inline-flex items-center rounded-lg px-3 py-2 text-[13px] font-medium transition ${!isMobileLayout ? 'bg-[#4B5563] text-white' : 'text-[#6B7280]'}`}><Monitor size={14} className="mr-2" />Desktop</button>
+            <div className={`flex min-w-0 ${isMobileLayout ? 'justify-end' : 'flex-wrap items-center justify-end'} gap-3`}>
+              <div className={`flex rounded-full border border-[#E5E7EB] bg-[#F3F4F6] p-1 ${isMobileLayout ? 'scale-90 origin-top-right' : ''}`}>
+                <button onClick={() => setLayoutMode('mobile')} className={`inline-flex items-center rounded-full px-2.5 py-1.5 text-[11px] font-medium transition ${isMobileLayout ? 'bg-[#4B5563] text-white' : 'text-[#6B7280]'}`} aria-label="Portrait layout"><Smartphone size={12} /></button>
+                <button onClick={() => setLayoutMode('desktop')} className={`inline-flex items-center rounded-full px-2.5 py-1.5 text-[11px] font-medium transition ${!isMobileLayout ? 'bg-[#4B5563] text-white' : 'text-[#6B7280]'}`} aria-label="Desktop layout"><Monitor size={12} /></button>
               </div>
-              <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-[13px] font-medium text-[#111111] shadow-[0_6px_20px_rgba(0,0,0,0.04)]"><Users size={14} className="shrink-0 text-[#4B5563]" /><span className="truncate">{dinerCount} Diners</span></div>
-              <div className={`inline-flex max-w-full items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-medium shadow-[0_6px_20px_rgba(0,0,0,0.04)] ${isToddlerFriendly ? 'border-[rgba(107,114,128,0.22)] bg-[rgba(107,114,128,0.08)] text-[#4B5563]' : 'border-[#E5E7EB] bg-white text-[#6B7280]'}`}><Baby size={14} className={`${isToddlerFriendly ? 'text-[#4B5563]' : 'text-[#6B7280]'} shrink-0`} /><span className="truncate">{isToddlerFriendly ? 'Toddler On' : 'Adults Only'}</span></div>
             </div>
           </div>
         </div>
