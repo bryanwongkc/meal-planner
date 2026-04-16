@@ -826,60 +826,129 @@ export default function App() {
               Share Plan
             </button>
           </div>
-          <div className={`grid ${isMobileLayout ? 'gap-3 grid-cols-1' : 'gap-4 grid-cols-7'}`}>
-            {WEEK_DAYS.map((day) => (
-              <div key={day} className="overflow-hidden rounded-3xl border border-[#E5E7EB] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
-                <div className="border-b border-[#E5E7EB] bg-[linear-gradient(180deg,rgba(107,114,128,0.08),rgba(107,114,128,0.02))] px-4 py-4">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Day Plan</p>
-                  <h4 className="mt-1 text-[16px] font-semibold text-[#111111]">{day}</h4>
+          {isMobileLayout ? (
+            <div className="grid gap-3 grid-cols-1">
+              {WEEK_DAYS.map((day) => (
+                <div key={day} className="overflow-hidden rounded-3xl border border-[#E5E7EB] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+                  <div className="border-b border-[#E5E7EB] bg-[linear-gradient(180deg,rgba(107,114,128,0.08),rgba(107,114,128,0.02))] px-4 py-4">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Day Plan</p>
+                    <h4 className="mt-1 text-[16px] font-semibold text-[#111111]">{day}</h4>
+                  </div>
+                  <div className="space-y-3 p-4">
+                    {MEAL_TYPES.map((slot) => {
+                      const recipeId = weeklyPlanner[day][slot];
+                      const recipe = getRecipeById(recipeId);
+
+                      return (
+                        <div key={`${day}-${slot}`} className={`space-y-3 rounded-2xl border p-3 transition ${recipe ? 'border-[rgba(107,114,128,0.16)] bg-[rgba(107,114,128,0.05)] shadow-[0_8px_20px_rgba(0,0,0,0.04)]' : 'border-[#E5E7EB] bg-[#F7F8FA]'}`}>
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">{slot}</label>
+                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${recipe ? 'bg-[#4B5563] text-white' : 'border border-[#E5E7EB] bg-white text-[#6B7280]'}`}>
+                              {recipe ? 'Planned' : 'Open'}
+                            </span>
+                          </div>
+                          <select
+                            className={`${selectClass} py-2.5 text-[14px]`}
+                            value={recipeId}
+                            onChange={(e) => assignRecipeToPlannerSlot(day, slot, e.target.value)}
+                          >
+                            <option value="">Unassigned</option>
+                            {recipes.map((savedRecipe) => (
+                              <option key={savedRecipe.id} value={savedRecipe.id}>
+                                {savedRecipe.title}
+                              </option>
+                            ))}
+                          </select>
+                          <div className={`min-h-[56px] rounded-xl border px-3 py-3 ${recipe ? 'border-[rgba(107,114,128,0.14)] bg-white' : 'border-dashed border-[#D1D5DB] bg-[rgba(107,114,128,0.03)]'}`}>
+                            {recipe ? (
+                              <div className="space-y-1">
+                                <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-[#111111]">{recipe.title}</p>
+                                <div className="flex items-center gap-2 text-[11px] text-[#6B7280]">
+                                  <span className="rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize">{recipe.mealType}</span>
+                                  {recipe.isFavorite ? <span className="rounded-full bg-[rgba(245,158,11,0.14)] px-2 py-0.5 text-[#B45309]">Favorite</span> : null}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex min-h-[28px] items-center text-[13px] leading-relaxed text-[#6B7280]">
+                                No recipe assigned
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="space-y-3 p-4">
-                  {MEAL_TYPES.map((slot) => {
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-3xl border border-[#E5E7EB] bg-white shadow-[0_14px_34px_rgba(0,0,0,0.05)]">
+              <div className="grid grid-cols-[140px_repeat(7,minmax(0,1fr))] border-b border-[#E5E7EB] bg-[linear-gradient(180deg,rgba(107,114,128,0.08),rgba(107,114,128,0.02))]">
+                <div className="border-r border-[#E5E7EB] px-4 py-4" />
+                {WEEK_DAYS.map((day) => (
+                  <div key={day} className="border-r border-[#E5E7EB] px-4 py-4 last:border-r-0">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Day</p>
+                    <h4 className="mt-1 text-[16px] font-semibold text-[#111111]">{day}</h4>
+                  </div>
+                ))}
+              </div>
+              {MEAL_TYPES.map((slot, rowIndex) => (
+                <div
+                  key={slot}
+                  className={`grid grid-cols-[140px_repeat(7,minmax(0,1fr))] ${rowIndex !== MEAL_TYPES.length - 1 ? 'border-b border-[#E5E7EB]' : ''}`}
+                >
+                  <div className="border-r border-[#E5E7EB] bg-[#F7F8FA] px-4 py-5">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Meal Slot</p>
+                    <h5 className="mt-1 text-[15px] font-semibold text-[#111111]">{slot}</h5>
+                  </div>
+                  {WEEK_DAYS.map((day) => {
                     const recipeId = weeklyPlanner[day][slot];
                     const recipe = getRecipeById(recipeId);
 
                     return (
-                      <div key={`${day}-${slot}`} className={`space-y-3 rounded-2xl border p-3 transition ${recipe ? 'border-[rgba(107,114,128,0.16)] bg-[rgba(107,114,128,0.05)] shadow-[0_8px_20px_rgba(0,0,0,0.04)]' : 'border-[#E5E7EB] bg-[#F7F8FA]'}`}>
-                        <div className="flex items-center justify-between gap-2">
-                          <label className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">{slot}</label>
-                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${recipe ? 'bg-[#4B5563] text-white' : 'bg-white text-[#6B7280] border border-[#E5E7EB]'}`}>
-                            {recipe ? 'Planned' : 'Open'}
-                          </span>
-                        </div>
-                        <select
-                          className={`${selectClass} py-2.5 text-[14px]`}
-                          value={recipeId}
-                          onChange={(e) => assignRecipeToPlannerSlot(day, slot, e.target.value)}
-                        >
-                          <option value="">Unassigned</option>
-                          {recipes.map((savedRecipe) => (
-                            <option key={savedRecipe.id} value={savedRecipe.id}>
-                              {savedRecipe.title}
-                            </option>
-                          ))}
-                        </select>
-                        <div className={`min-h-[56px] rounded-xl border px-3 py-3 ${recipe ? 'border-[rgba(107,114,128,0.14)] bg-white' : 'border-dashed border-[#D1D5DB] bg-[rgba(107,114,128,0.03)]'}`}>
-                          {recipe ? (
-                            <div className="space-y-1">
-                              <p className="line-clamp-2 text-[13px] font-semibold leading-snug text-[#111111]">{recipe.title}</p>
-                              <div className="flex items-center gap-2 text-[11px] text-[#6B7280]">
-                                <span className="rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize">{recipe.mealType}</span>
-                                {recipe.isFavorite ? <span className="rounded-full bg-[rgba(245,158,11,0.14)] px-2 py-0.5 text-[#B45309]">Favorite</span> : null}
+                      <div key={`${day}-${slot}`} className="border-r border-[#E5E7EB] p-4 last:border-r-0">
+                        <div className={`h-full rounded-2xl border p-3 transition ${recipe ? 'border-[rgba(107,114,128,0.16)] bg-[rgba(107,114,128,0.05)] shadow-[0_8px_20px_rgba(0,0,0,0.04)]' : 'border-[#E5E7EB] bg-[#FBFBFC]'}`}>
+                          <div className="mb-3 flex items-center justify-between gap-2">
+                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${recipe ? 'bg-[#4B5563] text-white' : 'border border-[#E5E7EB] bg-white text-[#6B7280]'}`}>
+                              {recipe ? 'Planned' : 'Open'}
+                            </span>
+                            {recipe?.isFavorite ? <span className="rounded-full bg-[rgba(245,158,11,0.14)] px-2 py-1 text-[10px] font-medium text-[#B45309]">Favorite</span> : null}
+                          </div>
+                          <select
+                            className={`${selectClass} py-2.5 text-[13px]`}
+                            value={recipeId}
+                            onChange={(e) => assignRecipeToPlannerSlot(day, slot, e.target.value)}
+                          >
+                            <option value="">Unassigned</option>
+                            {recipes.map((savedRecipe) => (
+                              <option key={savedRecipe.id} value={savedRecipe.id}>
+                                {savedRecipe.title}
+                              </option>
+                            ))}
+                          </select>
+                          <div className={`mt-3 min-h-[88px] rounded-xl border px-3 py-3 ${recipe ? 'border-[rgba(107,114,128,0.14)] bg-white' : 'border-dashed border-[#D1D5DB] bg-[rgba(107,114,128,0.03)]'}`}>
+                            {recipe ? (
+                              <div className="space-y-2">
+                                <p className="line-clamp-3 text-[13px] font-semibold leading-snug text-[#111111]">{recipe.title}</p>
+                                <div className="flex flex-wrap gap-2 text-[11px] text-[#6B7280]">
+                                  <span className="rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize">{recipe.mealType}</span>
+                                  {recipe.styleTag ? <span className="rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5">{recipe.styleTag}</span> : null}
+                                </div>
                               </div>
-                            </div>
-                          ) : (
-                            <div className="flex min-h-[28px] items-center text-[13px] leading-relaxed text-[#6B7280]">
-                              No recipe assigned
-                            </div>
-                          )}
+                            ) : (
+                              <div className="flex h-full items-center text-[13px] leading-relaxed text-[#6B7280]">
+                                No recipe assigned
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </Section>
     </section>
