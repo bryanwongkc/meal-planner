@@ -212,6 +212,7 @@ export default function App() {
   const compactGapClass = isMobileLayout ? 'space-y-3' : 'space-y-5';
   const compactStackClass = isMobileLayout ? 'space-y-4' : 'space-y-6';
   const getSavedGeneratedRecipe = (recipe) => recipes.find((savedRecipe) => savedRecipe.title === getRecipeTitle(recipe, mealType));
+  const getRecipeById = (recipeId) => recipes.find((recipe) => recipe.id === recipeId);
   const filteredSavedRecipes = recipes.filter((recipe) => {
     const matchesMealType = savedMealFilter === 'All' || recipe.mealType?.toLowerCase() === savedMealFilter.toLowerCase();
     const matchesSearch = !savedSearch.trim()
@@ -550,6 +551,45 @@ export default function App() {
     }));
   };
 
+  const buildWeeklyPlanShareText = () => (
+    [
+      'CulinaFusion Weekly Plan',
+      ...WEEK_DAYS.flatMap((day) => [
+        '',
+        day,
+        ...MEAL_TYPES.map((slot) => {
+          const recipeId = weeklyPlanner[day][slot];
+          const recipe = getRecipeById(recipeId);
+          return `${slot}: ${recipe ? recipe.title : 'Unassigned'}`;
+        })
+      ])
+    ].join('\n')
+  );
+
+  const shareWeeklyPlan = async () => {
+    const shareText = buildWeeklyPlanShareText();
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'CulinaFusion Weekly Plan',
+          text: shareText
+        });
+        return;
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareText);
+        setError('Weekly plan copied to clipboard.');
+        return;
+      }
+
+      setError('Sharing is not available on this device.');
+    } catch {
+      setError('Unable to share weekly plan.');
+    }
+  };
+
   const menuContent = (
     <div className={`min-w-0 ${compactGapClass}`}>
       <section className={sectionCardClass}>
@@ -774,33 +814,52 @@ export default function App() {
     <section className={`min-w-0 ${isMobileLayout ? 'space-y-3' : 'space-y-5'} pb-20 pt-2`}>
       <Section title="Weekly Planner" icon={Clock} compact={isMobileLayout}>
         <div className={isMobileLayout ? 'space-y-3' : 'space-y-4'}>
-          <div>
-            <p className="text-[14px] text-[#6B7280]">
-              Assign saved recipes to breakfast, lunch, and dinner slots for each day.
-            </p>
+          <div className={`flex ${isMobileLayout ? 'flex-col items-stretch gap-3' : 'items-start justify-between gap-4'}`}>
+            <div>
+              <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">Calendar View</p>
+              <p className="mt-2 text-[14px] text-[#6B7280]">
+                Assign saved recipes to breakfast, lunch, and dinner slots for each day.
+              </p>
+            </div>
+            <button onClick={shareWeeklyPlan} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
+              Share Plan
+            </button>
           </div>
-          <div className="grid gap-4">
+          <div className={`grid ${isMobileLayout ? 'gap-3 grid-cols-1' : 'gap-4 grid-cols-7'}`}>
             {WEEK_DAYS.map((day) => (
-              <div key={day} className="rounded-2xl border border-[#E5E7EB] bg-[#F7F8FA] p-4">
-                <h4 className="mb-3 text-[16px] font-semibold text-[#111111]">{day}</h4>
-                <div className={`grid gap-3 ${isMobileLayout ? 'grid-cols-1' : 'md:grid-cols-3'}`}>
-                  {MEAL_TYPES.map((slot) => (
-                    <div key={`${day}-${slot}`} className="space-y-2 rounded-xl border border-[#E5E7EB] bg-white p-3">
-                      <label className="text-[12px] font-medium text-[#6B7280]">{slot}</label>
-                      <select
-                        className={selectClass}
-                        value={weeklyPlanner[day][slot]}
-                        onChange={(e) => assignRecipeToPlannerSlot(day, slot, e.target.value)}
-                      >
-                        <option value="">Unassigned</option>
-                        {recipes.map((recipe) => (
-                          <option key={recipe.id} value={recipe.id}>
-                            {recipe.title}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
+              <div key={day} className="rounded-2xl border border-[#E5E7EB] bg-[#F7F8FA] p-3">
+                <div className="mb-3 border-b border-[#E5E7EB] pb-2">
+                  <h4 className="text-[15px] font-semibold text-[#111111]">{day}</h4>
+                </div>
+                <div className="space-y-3">
+                  {MEAL_TYPES.map((slot) => {
+                    const recipeId = weeklyPlanner[day][slot];
+                    const recipe = getRecipeById(recipeId);
+
+                    return (
+                      <div key={`${day}-${slot}`} className="space-y-2 rounded-xl border border-[#E5E7EB] bg-white p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <label className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#6B7280]">{slot}</label>
+                          {recipe && <span className="rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-1 text-[10px] font-medium text-[#4B5563]">Assigned</span>}
+                        </div>
+                        <select
+                          className={`${selectClass} py-2.5 text-[14px]`}
+                          value={recipeId}
+                          onChange={(e) => assignRecipeToPlannerSlot(day, slot, e.target.value)}
+                        >
+                          <option value="">Unassigned</option>
+                          {recipes.map((savedRecipe) => (
+                            <option key={savedRecipe.id} value={savedRecipe.id}>
+                              {savedRecipe.title}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="min-h-[36px] text-[13px] leading-relaxed text-[#6B7280]">
+                          {recipe ? recipe.title : 'No recipe assigned'}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ))}
