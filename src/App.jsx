@@ -267,6 +267,12 @@ export default function App() {
     return 'STYLE RULES: Generate fully Western dishes only. Do not make them fusion. Do not use Chinese naming, Chinese seasoning frameworks, wok-based Chinese technique, or Chinese dish structures unless explicitly requested elsewhere.';
   };
 
+  const buildPromptSection = (title, lines) => {
+    const filteredLines = lines.filter(Boolean);
+    if (filteredLines.length === 0) return '';
+    return [`${title}`, ...filteredLines].join('\n');
+  };
+
   const generateRecipes = async (isRefinement = false) => {
     setLoading(true);
     setError('');
@@ -292,9 +298,57 @@ export default function App() {
     const hkHouseholdInstruction = styleLabel === 'Authentic Chinese'
       ? 'Because STYLE is Authentic Chinese, constrain every dish to the top 100 most common Hong Kong household dishes. Do not generate banquet dishes, restaurant-only dishes, or non-household fusion dishes.'
       : '';
-    const prompt = isRefinement
-      ? `Refine the following menu: ${JSON.stringify(generatedRecipes)} FEEDBACK: "${followUpComment}" DINERS: ${dinerCount} TASK: Modify ONLY specific dishes. Keep others exactly the same. MEAL TYPE: ${mealType}. ${mealTypeInstruction} ${preferenceInstruction} ${flavorHealthInstruction} DIETARY: ${activeRules.join(', ')}. TODDLER MODE: ${isToddlerFriendly ? 'ON - update toddlerAdaptation if relevant.' : 'OFF'} STYLE: ${styleLabel}. ${styleInstruction} DIFFICULTY: ${difficulty}. ${hkHouseholdInstruction} ${cookingTipsInstruction}`
-      : `Executive Chef Role. Create ${dishCount} recipes for ${dinerCount} diners. MEAL TYPE: ${mealType}. ${mealTypeInstruction} ${preferenceInstruction} ${flavorHealthInstruction} STYLE: ${styleLabel}. ${styleInstruction} DIFFICULTY: ${difficulty} INGREDIENTS: Proteins (${finalProteins.join(', ')}); Fibers (${finalFibers.join(', ')}) RULES: ${activeRules.join(', ')} SHOPPING: ${location} ${toddlerInstruction} ${hkHouseholdInstruction} ${cookingTipsInstruction}`;
+    const parameterSection = buildPromptSection('PARAMETERS', [
+      `DISH_COUNT: ${dishCount}`,
+      `DINER_COUNT: ${dinerCount}`,
+      `MEAL_TYPE: ${mealType}`,
+      `TODAY_PREFERENCE: ${todayPreference.trim() || 'None'}`,
+      `STYLE: ${styleLabel}`,
+      `FLAVOR_HEALTH_BALANCE: ${flavorHealthBalance}/100 (${getFlavorHealthLabel(flavorHealthBalance)})`,
+      `TODDLER_MODE: ${isToddlerFriendly ? 'ON' : 'OFF'}`,
+      `DIFFICULTY: ${difficulty}`,
+      `SHOPPING_SOURCE: ${location}`,
+      `PROTEINS: ${finalProteins.join(', ') || 'None'}`,
+      `VEGETABLES: ${finalFibers.join(', ') || 'None'}`,
+      `DIETARY_RULES: ${activeRules.join('; ') || 'None'}`
+    ]);
+    const instructionSection = buildPromptSection('INSTRUCTIONS', [
+      mealTypeInstruction,
+      styleInstruction,
+      flavorHealthInstruction,
+      toddlerInstruction,
+      hkHouseholdInstruction,
+      cookingTipsInstruction
+    ]);
+    const outputSection = buildPromptSection('OUTPUT REQUIREMENTS', [
+      `Return exactly ${dishCount} recipe objects as JSON.`,
+      'Each recipe must match the requested meal type, style, and dietary constraints.',
+      'Use the provided proteins and vegetables as primary anchors where practical.',
+      "Keep the response schema-compatible with the required JSON fields only."
+    ]);
+    const refinementSection = isRefinement
+      ? buildPromptSection('REFINEMENT TASK', [
+          'Modify only the specific dishes needed to address the feedback.',
+          'Keep unchanged dishes as close as possible to the existing version.',
+          `FEEDBACK: ${followUpComment || 'None'}`,
+          `CURRENT_MENU_JSON: ${JSON.stringify(generatedRecipes)}`
+        ])
+      : buildPromptSection('TASK', [
+          'Create a new menu from scratch.',
+          'Make the dishes feel coherent as one meal set.'
+        ]);
+    const prompt = [
+      'ROLE',
+      'You are an expert meal-planning chef generating production-ready home-cooking recipes.',
+      '',
+      parameterSection,
+      '',
+      instructionSection,
+      '',
+      refinementSection,
+      '',
+      outputSection
+    ].join('\n');
     setLastGeminiPrompt(prompt);
     const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', responseSchema: { type: 'ARRAY', items: { type: 'OBJECT', properties: { name: { type: 'STRING' }, chineseName: { type: 'STRING' }, styleTag: { type: 'STRING' }, description: { type: 'STRING' }, prepTime: { type: 'STRING' }, cookTime: { type: 'STRING' }, ingredients: { type: 'ARRAY', items: { type: 'STRING' } }, instructions: { type: 'ARRAY', items: { type: 'STRING' } }, cookingTips: { type: 'ARRAY', items: { type: 'STRING' } }, toddlerAdaptation: { type: 'STRING' } }, required: ['name', 'styleTag', 'description', 'prepTime', 'cookTime', 'ingredients', 'instructions', 'cookingTips'] } } } };
     const requestRecipes = async (modelName) => {
