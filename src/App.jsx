@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Baby, ChefHat, Clock, Flame, LayoutGrid, Loader2, Menu, Monitor,
   Plus, RefreshCcw, Settings2, ShieldCheck, Smartphone, Sparkles, Star,
@@ -189,9 +189,11 @@ export default function App() {
   const recipes = useRecipes();
   const dietaryRules = useDietaryRules();
   const [selectedSavedRecipe, setSelectedSavedRecipe] = useState(null);
+  const [activeSavedRecipeActions, setActiveSavedRecipeActions] = useState(null);
   const [savedMealFilter, setSavedMealFilter] = useState('All');
   const [savedSearch, setSavedSearch] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const longPressTimerRef = useRef(null);
 
   const isMobileLayout = layoutMode === 'mobile';
   const trackClass = 'w-full cursor-pointer accent-[#4B5563]';
@@ -218,6 +220,27 @@ export default function App() {
       setSelectedSavedRecipe(null);
     }
   }, [recipes, selectedSavedRecipe]);
+
+  useEffect(() => () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+    }
+  }, []);
+
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const startSavedRecipeLongPress = (recipe) => {
+    clearLongPressTimer();
+    longPressTimerRef.current = setTimeout(() => {
+      setActiveSavedRecipeActions(recipe);
+      longPressTimerRef.current = null;
+    }, 450);
+  };
 
   const saveCustomRule = async () => {
     if (!newRuleInput.trim()) return;
@@ -593,32 +616,22 @@ export default function App() {
 
           <div className="grid gap-4">
             {filteredSavedRecipes.map((recipe) => (
-              <div key={recipe.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-2xl border border-[#EEEEEE] bg-white px-4 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.04)] sm:px-5">
+              <div key={recipe.id} className="rounded-2xl border border-[#EEEEEE] bg-white px-4 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.04)] sm:px-5">
                 <button
                   onClick={() => setSelectedSavedRecipe(recipe)}
-                  className="min-w-0 text-left"
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setActiveSavedRecipeActions(recipe);
+                  }}
+                  onTouchStart={() => startSavedRecipeLongPress(recipe)}
+                  onTouchEnd={clearLongPressTimer}
+                  onTouchMove={clearLongPressTimer}
+                  onTouchCancel={clearLongPressTimer}
+                  className="min-w-0 w-full text-left"
                 >
                   <h3 className="break-words text-[17px] font-semibold leading-snug text-[#111111]">{recipe.title}</h3>
                   <p className="mt-1 break-words text-[14px] capitalize text-[#6B7280]">{recipe.mealType}</p>
                 </button>
-                <div className="flex shrink-0 items-center gap-1 self-start">
-                  <button
-                    onClick={() => toggleFavoriteRecipe(recipe.id, recipe.isFavorite)}
-                    className={`rounded-lg p-2 transition duration-200 ease-out hover:bg-[rgba(107,114,128,0.08)] ${
-                      recipe.isFavorite ? 'text-[#4B5563]' : 'text-[#9CA3AF]'
-                    }`}
-                    aria-label={recipe.isFavorite ? 'Remove favorite' : 'Mark as favorite'}
-                  >
-                    <Star size={18} fill={recipe.isFavorite ? 'currentColor' : 'none'} />
-                  </button>
-                  <button
-                    onClick={() => deleteSavedRecipe(recipe.id)}
-                    className="rounded-lg p-2 text-[#9CA3AF] transition duration-200 ease-out hover:bg-[rgba(107,114,128,0.08)] hover:text-[#4B5563]"
-                    aria-label="Delete saved recipe"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
               </div>
             ))}
             {filteredSavedRecipes.length === 0 && (
@@ -931,6 +944,53 @@ export default function App() {
                   <span>{selectedSavedRecipe.isFavorite ? 'Favorited' : 'Mark Favorite'}</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeSavedRecipeActions && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(17,17,17,0.35)] p-4 sm:items-center" onClick={() => setActiveSavedRecipeActions(null)}>
+          <div className="w-full max-w-sm rounded-2xl border border-[#EEEEEE] bg-white p-4 shadow-[0_20px_48px_rgba(0,0,0,0.18)]" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4">
+              <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">Saved Recipe</p>
+              <h3 className="mt-2 break-words text-[18px] font-semibold text-[#111111]">{activeSavedRecipeActions.title}</h3>
+              <p className="mt-1 text-[14px] capitalize text-[#6B7280]">{activeSavedRecipeActions.mealType}</p>
+            </div>
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  toggleFavoriteRecipe(activeSavedRecipeActions.id, activeSavedRecipeActions.isFavorite);
+                  setActiveSavedRecipeActions(null);
+                }}
+                className={`flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-[14px] font-semibold transition duration-200 ease-out ${
+                  activeSavedRecipeActions.isFavorite
+                    ? 'border-[#4B5563] bg-[rgba(107,114,128,0.08)] text-[#4B5563]'
+                    : 'border-[#E5E7EB] bg-white text-[#6B7280]'
+                }`}
+              >
+                <Star size={16} fill={activeSavedRecipeActions.isFavorite ? 'currentColor' : 'none'} />
+                <span>{activeSavedRecipeActions.isFavorite ? 'Remove Favorite' : 'Mark Favorite'}</span>
+              </button>
+              <button
+                onClick={() => {
+                  deleteSavedRecipe(activeSavedRecipeActions.id);
+                  setActiveSavedRecipeActions(null);
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-[14px] font-semibold text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(107,114,128,0.08)]"
+              >
+                <Trash2 size={16} />
+                <span>Delete</span>
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedSavedRecipe(activeSavedRecipeActions);
+                  setActiveSavedRecipeActions(null);
+                }}
+                className="flex w-full items-center justify-center rounded-xl bg-[#4B5563] px-4 py-3 text-[14px] font-semibold text-white transition duration-200 ease-out hover:bg-[#374151]"
+              >
+                View Details
+              </button>
             </div>
           </div>
         </div>
