@@ -11,6 +11,7 @@ const PROTEIN_OPTIONS = ['Pork (Pork Belly, Sliced Pork)', 'Chicken (Thighs, Bre
 const FIBER_OPTIONS = ['Bok Choy', 'Gai Lan (Chinese Broccoli)', 'Cabbage (Napa or Green)', 'Eggplant', 'Mushrooms (Shiitake, Enoki, Oyster)', 'Green Beans', 'Snow Peas', 'Bell Peppers', 'Lotus Root', 'Potato', 'Cucumber', 'CUSTOM_VAL'];
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner'];
 const SAVED_FILTERS = ['All', ...MEAL_TYPES];
+const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const LOCATIONS = [{ value: 'supermarket', label: 'Supermarket' }, { value: 'wet market', label: 'Wet Market' }];
 const DIFFICULTIES = [{ value: 'Very Easy', label: 'Very Easy (Fusion/Western only)' }, { value: 'Easy', label: 'Easy' }, { value: 'Medium', label: 'Medium' }, { value: 'Hard', label: 'Hard' }];
 const DEFAULT_DIETARY_RULES = [
@@ -194,6 +195,12 @@ export default function App() {
   const [recipeQuestion, setRecipeQuestion] = useState('');
   const [recipeAnswer, setRecipeAnswer] = useState('');
   const [recipeQuestionLoading, setRecipeQuestionLoading] = useState(false);
+  const [weeklyPlanner, setWeeklyPlanner] = useState(() => (
+    WEEK_DAYS.reduce((acc, day) => ({
+      ...acc,
+      [day]: { Breakfast: '', Lunch: '', Dinner: '' }
+    }), {})
+  ));
   const [savedMealFilter, setSavedMealFilter] = useState('All');
   const [savedSearch, setSavedSearch] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -533,6 +540,16 @@ export default function App() {
     setRecipeAnswer('');
   };
 
+  const assignRecipeToPlannerSlot = (day, slot, recipeId) => {
+    setWeeklyPlanner((current) => ({
+      ...current,
+      [day]: {
+        ...current[day],
+        [slot]: recipeId
+      }
+    }));
+  };
+
   const menuContent = (
     <div className={`min-w-0 ${compactGapClass}`}>
       <section className={sectionCardClass}>
@@ -753,6 +770,46 @@ export default function App() {
     </section>
   );
 
+  const weeklyPlannerContent = (
+    <section className={`min-w-0 ${isMobileLayout ? 'space-y-3' : 'space-y-5'} pb-20 pt-2`}>
+      <Section title="Weekly Planner" icon={Clock} compact={isMobileLayout}>
+        <div className={isMobileLayout ? 'space-y-3' : 'space-y-4'}>
+          <div>
+            <p className="text-[14px] text-[#6B7280]">
+              Assign saved recipes to breakfast, lunch, and dinner slots for each day.
+            </p>
+          </div>
+          <div className="grid gap-4">
+            {WEEK_DAYS.map((day) => (
+              <div key={day} className="rounded-2xl border border-[#E5E7EB] bg-[#F7F8FA] p-4">
+                <h4 className="mb-3 text-[16px] font-semibold text-[#111111]">{day}</h4>
+                <div className={`grid gap-3 ${isMobileLayout ? 'grid-cols-1' : 'md:grid-cols-3'}`}>
+                  {MEAL_TYPES.map((slot) => (
+                    <div key={`${day}-${slot}`} className="space-y-2 rounded-xl border border-[#E5E7EB] bg-white p-3">
+                      <label className="text-[12px] font-medium text-[#6B7280]">{slot}</label>
+                      <select
+                        className={selectClass}
+                        value={weeklyPlanner[day][slot]}
+                        onChange={(e) => assignRecipeToPlannerSlot(day, slot, e.target.value)}
+                      >
+                        <option value="">Unassigned</option>
+                        {recipes.map((recipe) => (
+                          <option key={recipe.id} value={recipe.id}>
+                            {recipe.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Section>
+    </section>
+  );
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#F7F8FA] pb-20 text-[#111111]">
       <header className={`sticky top-0 z-30 border-b border-[rgba(255,255,255,0.4)] bg-[rgba(255,255,255,0.6)] px-4 backdrop-blur-[12px] ${isMobileLayout ? 'py-3' : 'py-4'}`}>
@@ -801,6 +858,7 @@ export default function App() {
             <div className="space-y-2">
               {[
                 { id: 'main', label: 'Main Page', icon: LayoutGrid },
+                { id: 'weekly', label: 'Weekly Planner', icon: Clock },
                 { id: 'saved', label: 'Saved Recipes', icon: Star },
                 { id: 'rules', label: 'Dietary Rules', icon: ShieldCheck },
                 { id: 'developer', label: 'Developer', icon: Menu }
@@ -903,6 +961,8 @@ export default function App() {
           </>
         ) : currentView === 'saved' ? (
           savedRecipesContent
+        ) : currentView === 'weekly' ? (
+          weeklyPlannerContent
         ) : currentView === 'rules' ? (
           rulesContent
         ) : (
