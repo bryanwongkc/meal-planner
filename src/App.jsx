@@ -132,7 +132,7 @@ export default function App() {
   const [dishCount, setDishCount] = useState(3);
   const [dinerCount, setDinerCount] = useState(3);
   const [isToddlerFriendly, setIsToddlerFriendly] = useState(false);
-  const [styleWeight, setStyleWeight] = useState(0);
+  const [styleWeight, setStyleWeight] = useState(-100);
   const [flavorHealthBalance, setFlavorHealthBalance] = useState(50);
   const [proteins, setProteins] = useState([{ value: PROTEIN_OPTIONS[0], customText: '' }]);
   const [fibers, setFibers] = useState([{ value: FIBER_OPTIONS[0], customText: '' }]);
