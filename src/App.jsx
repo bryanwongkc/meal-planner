@@ -454,15 +454,15 @@ export default function App() {
 
           <div className="grid gap-4">
             {filteredSavedRecipes.map((recipe) => (
-              <div key={recipe.id} className="flex items-start justify-between gap-3 rounded-2xl border border-[#EEEEEE] bg-white px-5 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.04)]">
+              <div key={recipe.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-2xl border border-[#EEEEEE] bg-white px-4 py-4 shadow-[0_6px_20px_rgba(0,0,0,0.04)] sm:px-5">
                 <button
                   onClick={() => setSelectedSavedRecipe(recipe)}
-                  className="min-w-0 flex-1 text-left"
+                  className="min-w-0 text-left"
                 >
-                  <h3 className="truncate text-[17px] font-semibold text-[#111111]">{recipe.title}</h3>
-                  <p className="mt-1 text-[14px] capitalize text-[#6B7280]">{recipe.mealType}</p>
+                  <h3 className="break-words text-[17px] font-semibold leading-snug text-[#111111]">{recipe.title}</h3>
+                  <p className="mt-1 break-words text-[14px] capitalize text-[#6B7280]">{recipe.mealType}</p>
                 </button>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-1 self-start">
                   <button
                     onClick={() => toggleFavoriteRecipe(recipe.id, recipe.isFavorite)}
                     className={`rounded-lg p-2 transition duration-200 ease-out hover:bg-[rgba(107,114,128,0.08)] ${
