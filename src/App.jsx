@@ -14,7 +14,7 @@ const SAVED_FILTERS = ['All', ...MEAL_TYPES];
 const LOCATIONS = [{ value: 'supermarket', label: 'Supermarket' }, { value: 'wet market', label: 'Wet Market' }];
 const DIFFICULTIES = [{ value: 'Very Easy', label: 'Very Easy (Fusion/Western only)' }, { value: 'Easy', label: 'Easy' }, { value: 'Medium', label: 'Medium' }, { value: 'Hard', label: 'Hard' }];
 
-const card = 'rounded-2xl border border-[#EEEEEE] bg-white p-6 shadow-[0_6px_20px_rgba(0,0,0,0.04)]';
+const card = 'min-w-0 rounded-2xl border border-[#EEEEEE] bg-white p-6 shadow-[0_6px_20px_rgba(0,0,0,0.04)]';
 const inputClass = 'w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[15px] font-medium text-[#111111] outline-none transition focus:border-[#6B7280] focus:ring-2 focus:ring-[rgba(107,114,128,0.12)] placeholder:text-[#6B7280]';
 const selectClass = 'w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[15px] font-medium text-[#111111] outline-none transition focus:border-[#6B7280] focus:ring-2 focus:ring-[rgba(107,114,128,0.12)]';
 const primaryButtonClass = 'rounded-xl bg-[#4B5563] px-5 py-3 text-[13px] font-semibold text-white transition duration-200 ease-out hover:bg-[#374151] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#D1D5DB]';
@@ -292,7 +292,7 @@ export default function App() {
   };
 
   const menuContent = (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5">
       <Section title="Meal Profile" icon={LayoutGrid}>
         <div className={`grid gap-5 ${isMobileLayout ? 'grid-cols-1' : 'grid-cols-3'}`}>
           <div className="space-y-3"><div className="flex items-center justify-between"><label className="text-[12px] font-medium text-[#6B7280]">Dishes</label><span className="text-[22px] font-semibold text-[#111111]">{dishCount}</span></div><input type="range" min="1" max="6" step="1" value={dishCount} onChange={(e) => setDishCount(parseInt(e.target.value, 10))} className={trackClass} /><div className="flex justify-between text-[12px] text-[#6B7280]"><span>Light spread</span><span>Full table</span></div></div>
@@ -402,7 +402,7 @@ export default function App() {
   );
 
   const savedRecipesContent = (
-    <section className="space-y-5 pb-20 pt-2">
+    <section className="min-w-0 space-y-5 pb-20 pt-2">
       <Section title="Saved Recipes" icon={Star}>
         <div className="space-y-5">
           <div className="space-y-3">
@@ -494,27 +494,27 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA] pb-20 text-[#111111]">
+    <div className="min-h-screen overflow-x-hidden bg-[#F7F8FA] pb-20 text-[#111111]">
       <header className="sticky top-0 z-30 border-b border-[rgba(255,255,255,0.4)] bg-[rgba(255,255,255,0.6)] px-4 py-4 backdrop-blur-[12px]">
-        <div className="mx-auto max-w-6xl">
-          <div className={`flex ${isMobileLayout ? 'flex-col gap-4' : 'items-center justify-between gap-6'}`}>
-            <div className="flex items-center gap-4">
+        <div className="mx-auto w-full max-w-6xl min-w-0">
+          <div className={`flex min-w-0 ${isMobileLayout ? 'flex-col gap-4' : 'items-center justify-between gap-6'}`}>
+            <div className="flex min-w-0 items-center gap-4">
               <div className="rounded-2xl border border-[#E5E7EB] bg-white p-3 text-[#111111] shadow-[0_6px_20px_rgba(0,0,0,0.04)]"><ChefHat size={28} /></div>
-              <div><h1 className="text-[30px] font-bold tracking-[-0.03em] text-[#111111]">Culina<span className="text-[#4B5563]">Fusion</span></h1><p className="mt-1 text-[12px] text-[#6B7280]">Tailored gastronomy engine</p></div>
+              <div className="min-w-0"><h1 className="break-words text-[30px] font-bold tracking-[-0.03em] text-[#111111]">Culina<span className="text-[#4B5563]">Fusion</span></h1><p className="mt-1 text-[12px] text-[#6B7280]">Tailored gastronomy engine</p></div>
             </div>
-            <div className={`flex ${isMobileLayout ? 'flex-wrap' : 'items-center'} gap-3`}>
-              <div className="flex rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] p-1">
+            <div className={`flex min-w-0 ${isMobileLayout ? 'flex-wrap' : 'flex-wrap items-center justify-end'} gap-3`}>
+              <div className="flex max-w-full rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] p-1">
                 <button onClick={() => setLayoutMode('mobile')} className={`inline-flex items-center rounded-lg px-3 py-2 text-[13px] font-medium transition ${isMobileLayout ? 'bg-[#4B5563] text-white' : 'text-[#6B7280]'}`}><Smartphone size={14} className="mr-2" />Portrait</button>
                 <button onClick={() => setLayoutMode('desktop')} className={`inline-flex items-center rounded-lg px-3 py-2 text-[13px] font-medium transition ${!isMobileLayout ? 'bg-[#4B5563] text-white' : 'text-[#6B7280]'}`}><Monitor size={14} className="mr-2" />Desktop</button>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-[13px] font-medium text-[#111111] shadow-[0_6px_20px_rgba(0,0,0,0.04)]"><Users size={14} className="text-[#4B5563]" /><span>{dinerCount} Diners</span></div>
-              <div className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-medium shadow-[0_6px_20px_rgba(0,0,0,0.04)] ${isToddlerFriendly ? 'border-[rgba(107,114,128,0.22)] bg-[rgba(107,114,128,0.08)] text-[#4B5563]' : 'border-[#E5E7EB] bg-white text-[#6B7280]'}`}><Baby size={14} className={isToddlerFriendly ? 'text-[#4B5563]' : 'text-[#6B7280]'} /><span>{isToddlerFriendly ? 'Toddler On' : 'Adults Only'}</span></div>
+              <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-[13px] font-medium text-[#111111] shadow-[0_6px_20px_rgba(0,0,0,0.04)]"><Users size={14} className="shrink-0 text-[#4B5563]" /><span className="truncate">{dinerCount} Diners</span></div>
+              <div className={`inline-flex max-w-full items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-medium shadow-[0_6px_20px_rgba(0,0,0,0.04)] ${isToddlerFriendly ? 'border-[rgba(107,114,128,0.22)] bg-[rgba(107,114,128,0.08)] text-[#4B5563]' : 'border-[#E5E7EB] bg-white text-[#6B7280]'}`}><Baby size={14} className={`${isToddlerFriendly ? 'text-[#4B5563]' : 'text-[#6B7280]'} shrink-0`} /><span className="truncate">{isToddlerFriendly ? 'Toddler On' : 'Adults Only'}</span></div>
             </div>
           </div>
         </div>
       </header>
 
-      <main className={`mx-auto px-4 pt-8 ${isMobileLayout ? 'max-w-md' : 'max-w-6xl'}`}>
+      <main className={`mx-auto w-full min-w-0 px-4 pt-8 ${isMobileLayout ? 'max-w-md' : 'max-w-6xl'}`}>
         <div className="mb-6 flex rounded-xl border border-[#E5E7EB] bg-[#F3F4F6] p-1">
           <button onClick={() => setMainTab('planner')} className={`flex-1 rounded-lg px-4 py-3 text-[13px] font-medium transition ${mainTab === 'planner' ? 'bg-[#4B5563] text-white' : 'text-[#6B7280]'}`}>Planner</button>
           <button onClick={() => setMainTab('saved')} className={`flex-1 rounded-lg px-4 py-3 text-[13px] font-medium transition ${mainTab === 'saved' ? 'bg-[#4B5563] text-white' : 'text-[#6B7280]'}`}>Saved</button>
@@ -531,9 +531,9 @@ export default function App() {
                 {activeTab === 'menu' ? menuContent : rulesContent}
               </div>
             ) : (
-              <div className="grid gap-8 lg:grid-cols-[1.35fr_0.95fr]">
-                <div className="space-y-6">{menuContent}</div>
-                <div>{rulesContent}</div>
+              <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.95fr)]">
+                <div className="min-w-0 space-y-6">{menuContent}</div>
+                <div className="min-w-0">{rulesContent}</div>
               </div>
             )}
 
@@ -547,12 +547,12 @@ export default function App() {
 
             {generatedRecipes.length > 0 && (
               <section className="pb-20 pt-10">
-                <div className="mb-8 flex items-end justify-between gap-4"><div><p className="text-[12px] text-[#6B7280]">Results</p><h2 className="mt-2 text-[30px] font-semibold tracking-[-0.03em] text-[#111111]">Executive Menu</h2></div><div className="rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-[12px] font-medium text-[#6B7280] shadow-[0_6px_20px_rgba(0,0,0,0.04)]">{isMobileLayout ? 'Portrait Layout' : 'Desktop Layout'}</div></div>
+                <div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div className="min-w-0"><p className="text-[12px] text-[#6B7280]">Results</p><h2 className="mt-2 break-words text-[30px] font-semibold tracking-[-0.03em] text-[#111111]">Executive Menu</h2></div><div className="rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-[12px] font-medium text-[#6B7280] shadow-[0_6px_20px_rgba(0,0,0,0.04)]">{isMobileLayout ? 'Portrait Layout' : 'Desktop Layout'}</div></div>
                 <div className="space-y-8">
                   {generatedRecipes.map((recipe, index) => (
                     <article key={index} className="overflow-hidden rounded-2xl border border-[#EEEEEE] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.04)] transition duration-200 ease-out hover:shadow-[0_10px_28px_rgba(0,0,0,0.06)]">
-                      <div className={isMobileLayout ? 'border-b border-[#EEEEEE] px-6 py-6' : 'flex flex-col lg:flex-row'}>
-                        <div className={`${isMobileLayout ? 'pr-10' : 'border-b border-[#EEEEEE] p-8 pr-14 lg:w-[30%] lg:border-b-0 lg:border-r'} relative`}>
+                      <div className={isMobileLayout ? 'border-b border-[#EEEEEE] px-6 py-6' : 'flex min-w-0 flex-col lg:flex-row'}>
+                        <div className={`${isMobileLayout ? 'pr-10' : 'min-w-0 border-b border-[#EEEEEE] p-8 pr-14 lg:w-[30%] lg:border-b-0 lg:border-r'} relative`}>
                           <button
                             onClick={() => {
                               const savedRecipe = getSavedGeneratedRecipe(recipe);
@@ -583,8 +583,8 @@ export default function App() {
                             <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Flame size={12} className="mr-2 text-[#4B5563]" />{recipe.cookTime}</div>
                           </div>
                         </div>
-                        <div className={isMobileLayout ? 'space-y-8 px-6 py-6' : 'p-8 lg:w-[70%]'}>
-                          <div className={`grid gap-8 ${isMobileLayout ? 'grid-cols-1' : 'lg:grid-cols-3 lg:gap-8'}`}>
+                        <div className={isMobileLayout ? 'min-w-0 space-y-8 px-6 py-6' : 'min-w-0 p-8 lg:w-[70%]'}>
+                          <div className={`grid min-w-0 gap-8 ${isMobileLayout ? 'grid-cols-1' : 'lg:grid-cols-3 lg:gap-8'}`}>
                             <div><h4 className="mb-4 text-[13px] font-medium text-[#6B7280]">Ingredients</h4><ul className="space-y-3 text-[15px] text-[#111111]">{recipe.ingredients.map((ingredient, itemIndex) => <li key={itemIndex} className="flex items-start"><span className="mr-2 mt-1.5 h-1.5 w-1.5 rounded-full bg-[#6B7280]" />{ingredient}</li>)}</ul></div>
                             <div><h4 className="mb-4 text-[13px] font-medium text-[#6B7280]">Execution</h4><ol className="space-y-4 text-[15px]">{recipe.instructions.map((step, stepIndex) => <li key={stepIndex} className="flex gap-3"><span className="pt-0.5 text-[13px] font-semibold text-[#4B5563]">{stepIndex + 1}.</span><span className="leading-relaxed text-[#6B7280]">{step}</span></li>)}</ol></div>
                             <div><h4 className="mb-4 text-[13px] font-medium text-[#6B7280]">Cooking Tips</h4><ul className="space-y-3 text-[15px]">{recipe.cookingTips?.map((tip, tipIndex) => <li key={tipIndex} className="rounded-xl border border-[#E5E7EB] bg-[#F7F8FA] px-4 py-3 leading-relaxed text-[#6B7280]">{tip}</li>)}</ul></div>
@@ -599,7 +599,7 @@ export default function App() {
                 <div className="mt-10 overflow-hidden rounded-2xl border border-[#EEEEEE] bg-white p-8 shadow-[0_6px_20px_rgba(0,0,0,0.04)]">
                   <div className="mb-3 flex items-center gap-3 text-[12px] font-medium text-[#4B5563]"><Undo2 size={16} /><span>Surgical Tweak</span></div>
                   <h3 className="text-[22px] font-semibold text-[#111111]">Refine specific dishes?</h3>
-                  <div className={`mt-5 flex gap-4 ${isMobileLayout ? 'flex-col' : 'flex-col lg:flex-row'}`}>
+              <div className={`mt-5 flex min-w-0 gap-4 ${isMobileLayout ? 'flex-col' : 'flex-col lg:flex-row'}`}>
                     <textarea className="min-h-[112px] flex-1 rounded-xl border border-[#E5E7EB] bg-white p-5 text-[15px] text-[#111111] outline-none placeholder:text-[#6B7280] focus:border-[#6B7280] focus:ring-2 focus:ring-[rgba(107,114,128,0.12)]" placeholder="e.g. Swap salmon for sea bass..." value={followUpComment} onChange={(e) => setFollowUpComment(e.target.value)} />
                     <button onClick={() => generateRecipes(true)} disabled={loading || !followUpComment.trim()} className="flex items-center justify-center gap-3 rounded-xl bg-[#4B5563] px-10 py-4 text-[14px] font-semibold text-white transition duration-200 ease-out hover:bg-[#374151] active:scale-[0.98] disabled:opacity-40"><RefreshCcw size={18} />Update</button>
                   </div>
@@ -614,7 +614,7 @@ export default function App() {
 
       {selectedSavedRecipe && (
         <div className="fixed inset-0 z-40 flex items-end justify-center bg-[rgba(17,17,17,0.45)] p-4 sm:items-center">
-          <div className={`flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-2xl border border-[#EEEEEE] bg-white shadow-[0_20px_48px_rgba(0,0,0,0.18)] ${isMobileLayout ? 'max-w-[calc(100vw-2rem)]' : 'max-w-[min(64rem,calc(100vw-2rem))]'}`}>
+          <div className={`flex max-h-[calc(100vh-2rem)] w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-[#EEEEEE] bg-white shadow-[0_20px_48px_rgba(0,0,0,0.18)] ${isMobileLayout ? 'max-w-[calc(100vw-2rem)]' : 'max-w-[min(64rem,calc(100vw-2rem))]'}`}>
             <div className="flex shrink-0 items-start justify-between border-b border-[#E5E7EB] px-6 py-5">
               <div>
                 <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">Saved Recipe</p>
@@ -631,8 +631,8 @@ export default function App() {
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-6">
-              <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-                <div>
+              <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                <div className="min-w-0">
                   {selectedSavedRecipe.styleTag && (
                     <span className="mb-3 block text-[12px] font-medium text-[#4B5563]">{selectedSavedRecipe.styleTag}</span>
                   )}
@@ -657,8 +657,8 @@ export default function App() {
                     )}
                   </div>
                 </div>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div>
+                <div className="grid min-w-0 gap-6 md:grid-cols-2">
+                  <div className="min-w-0">
                     <h4 className="mb-3 text-[13px] font-medium text-[#6B7280]">Ingredients</h4>
                     {selectedSavedRecipe.ingredients?.length ? (
                       <ul className="space-y-3 text-[15px] text-[#111111]">
@@ -673,7 +673,7 @@ export default function App() {
                       <p className="text-[14px] text-[#6B7280]">No ingredients saved.</p>
                     )}
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h4 className="mb-3 text-[13px] font-medium text-[#6B7280]">Execution</h4>
                     {selectedSavedRecipe.instructions?.length ? (
                       <ol className="space-y-4 text-[15px]">
