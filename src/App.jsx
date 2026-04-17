@@ -970,8 +970,6 @@ export default function App() {
       buildPromptSection('TASK', [
         'Consolidate the weekly meal plan into one sensible grocery shopping list.',
         'Merge duplicate ingredients across recipes.',
-        'For pantry seasonings such as sugar, salt, soy sauce, vinegar, pepper, cornstarch, oils, and similar staples: output only the base ingredient name with no count suffix.',
-        'For non-seasoning ingredients: preserve useful quantity or weight text when present.',
         'Do not include recipe titles or explanations.',
         'Return only grocery item labels that should appear in the final list.'
       ]),
