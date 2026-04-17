@@ -877,7 +877,8 @@ export default function App() {
         id: key,
         label: value.label,
         checked: false,
-        count: value.count
+        count: value.count,
+        isSeasoning: value.isSeasoning
       }))
       .sort((a, b) => a.label.localeCompare(b.label))
       .map(({ count, isSeasoning, ...item }) => ({
