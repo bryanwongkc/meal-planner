@@ -191,6 +191,7 @@ export default function App() {
   const dietaryRules = useDietaryRules();
   const [selectedSavedRecipe, setSelectedSavedRecipe] = useState(null);
   const [activeSavedRecipeActions, setActiveSavedRecipeActions] = useState(null);
+  const [plannerPickerTarget, setPlannerPickerTarget] = useState(null);
   const [recipeQuestionTarget, setRecipeQuestionTarget] = useState(null);
   const [recipeQuestion, setRecipeQuestion] = useState('');
   const [recipeAnswer, setRecipeAnswer] = useState('');
@@ -547,22 +548,39 @@ export default function App() {
       ...current,
       [day]: {
         ...current[day],
-        [slot]: current[day][slot].map((dishId, index) => (index === dishIndex ? recipeId : dishId))
+        [slot]: dishIndex >= current[day][slot].length
+          ? [...current[day][slot], recipeId]
+          : current[day][slot]
+            .map((dishId, index) => (index === dishIndex ? recipeId : dishId))
+            .filter(Boolean)
       }
     }));
   };
 
   const addDishToPlannerSlot = (day, slot) => {
+    setPlannerPickerTarget({
+      day,
+      slot,
+      dishIndex: weeklyPlanner[day][slot].filter(Boolean).length
+    });
+  };
+
+  const removeRecipeFromPlannerSlot = (day, slot, dishIndex) => {
     setWeeklyPlanner((current) => ({
       ...current,
       [day]: {
         ...current[day],
-        [slot]: [...current[day][slot], '']
+        [slot]: current[day][slot].filter((_, index) => index !== dishIndex)
       }
     }));
   };
 
-  const getPlannerSlotRecipes = (day, slot) => weeklyPlanner[day][slot].map((recipeId) => getRecipeById(recipeId));
+  const openPlannerRecipePicker = (day, slot, dishIndex) => {
+    setPlannerPickerTarget({ day, slot, dishIndex });
+  };
+
+  const getPlannerSlotRecipeIds = (day, slot) => weeklyPlanner[day][slot].filter(Boolean);
+  const getPlannerSlotRecipes = (day, slot) => getPlannerSlotRecipeIds(day, slot).map((recipeId) => getRecipeById(recipeId)).filter(Boolean);
 
   const buildWeeklyPlanShareText = () => (
     [
@@ -847,7 +865,6 @@ export default function App() {
                   </div>
                   <div className="space-y-3 p-4">
                     {MEAL_TYPES.map((slot) => {
-                      const slotRecipeIds = weeklyPlanner[day][slot];
                       const assignedRecipes = getPlannerSlotRecipes(day, slot).filter(Boolean);
 
                       return (
@@ -868,32 +885,29 @@ export default function App() {
                             </div>
                           </div>
                           <div className="min-w-0 space-y-3">
-                            {slotRecipeIds.map((recipeId, dishIndex) => {
-                              const recipe = getRecipeById(recipeId);
-                              return (
-                                <div key={`${day}-${slot}-${dishIndex}`} className={`min-w-0 overflow-hidden rounded-xl border px-3 py-3 ${recipe ? 'border-[rgba(107,114,128,0.14)] bg-white' : 'border-dashed border-[#D1D5DB] bg-[rgba(107,114,128,0.03)]'}`}>
-                                  <select className={`${selectClass} min-w-0 py-2.5 text-[14px]`} value={recipeId} onChange={(e) => assignRecipeToPlannerSlot(day, slot, dishIndex, e.target.value)}>
-                                    <option value="">Unassigned</option>
-                                    {recipes.map((savedRecipe) => (
-                                      <option key={savedRecipe.id} value={savedRecipe.id}>{savedRecipe.title}</option>
-                                    ))}
-                                  </select>
-                                  <div className="mt-3 min-w-0 min-h-[56px]">
-                                    {recipe ? (
-                                      <div className="min-w-0 space-y-1.5">
-                                        <p className="text-[13px] font-semibold leading-snug text-[#111111] break-words [overflow-wrap:anywhere]">{recipe.title}</p>
-                                        <div className="flex min-w-0 flex-wrap gap-2 text-[11px] text-[#6B7280]">
-                                          <span className="min-w-0 max-w-full rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize break-words [overflow-wrap:anywhere]">{recipe.mealType}</span>
-                                          {recipe.isFavorite ? <span className="whitespace-nowrap rounded-full bg-[rgba(245,158,11,0.14)] px-2 py-0.5 text-[#B45309]">Favorite</span> : null}
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div className="flex min-h-[28px] items-center text-[13px] leading-relaxed text-[#6B7280]">No recipe assigned</div>
-                                    )}
+                            {assignedRecipes.length > 0 ? assignedRecipes.map((recipe, dishIndex) => (
+                              <button
+                                key={`${day}-${slot}-${dishIndex}`}
+                                onClick={() => openPlannerRecipePicker(day, slot, dishIndex)}
+                                className="flex w-full min-w-0 items-start justify-between gap-3 rounded-xl border border-[rgba(107,114,128,0.14)] bg-white px-3 py-3 text-left transition hover:border-[rgba(107,114,128,0.24)] hover:bg-[#FCFCFD]"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[13px] font-semibold leading-snug text-[#111111] break-words [overflow-wrap:anywhere]">{recipe.title}</p>
+                                  <div className="mt-1 flex min-w-0 flex-wrap gap-2 text-[11px] text-[#6B7280]">
+                                    <span className="min-w-0 max-w-full rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize break-words [overflow-wrap:anywhere]">{recipe.mealType}</span>
+                                    {recipe.isFavorite ? <span className="whitespace-nowrap rounded-full bg-[rgba(245,158,11,0.14)] px-2 py-0.5 text-[#B45309]">Favorite</span> : null}
                                   </div>
                                 </div>
-                              );
-                            })}
+                                <span className="shrink-0 text-[11px] font-medium text-[#6B7280]">Edit</span>
+                              </button>
+                            )) : (
+                              <button
+                                onClick={() => addDishToPlannerSlot(day, slot)}
+                                className="flex min-h-[96px] w-full items-center justify-center rounded-xl border border-dashed border-[#D1D5DB] bg-[rgba(107,114,128,0.03)] px-4 py-5 text-center transition hover:border-[#9CA3AF] hover:bg-[rgba(107,114,128,0.05)]"
+                              >
+                                <span className="text-[36px] font-light leading-none text-[#4B5563]">+</span>
+                              </button>
+                            )}
                           </div>
                         </div>
                       );
@@ -921,7 +935,6 @@ export default function App() {
                       <h5 className="mt-1 break-words text-[15px] font-semibold text-[#111111] [overflow-wrap:anywhere]">{slot}</h5>
                     </div>
                     {WEEK_DAYS.map((day) => {
-                      const slotRecipeIds = weeklyPlanner[day][slot];
                       const assignedRecipes = getPlannerSlotRecipes(day, slot).filter(Boolean);
                       return (
                         <div key={`${day}-${slot}`} className="min-w-0 overflow-hidden border-r border-[#E5E7EB] p-4 last:border-r-0">
@@ -939,33 +952,30 @@ export default function App() {
                               </button>
                             </div>
                             <div className="min-w-0 space-y-3">
-                              {slotRecipeIds.map((recipeId, dishIndex) => {
-                                const recipe = getRecipeById(recipeId);
-                                return (
-                                  <div key={`${day}-${slot}-${dishIndex}`} className={`min-w-0 overflow-hidden rounded-xl border px-3 py-3 ${recipe ? 'border-[rgba(107,114,128,0.14)] bg-white' : 'border-dashed border-[#D1D5DB] bg-[rgba(107,114,128,0.03)]'}`}>
-                                    <select className={`${selectClass} min-w-0 py-2.5 text-[13px]`} value={recipeId} onChange={(e) => assignRecipeToPlannerSlot(day, slot, dishIndex, e.target.value)}>
-                                      <option value="">Unassigned</option>
-                                      {recipes.map((savedRecipe) => (
-                                        <option key={savedRecipe.id} value={savedRecipe.id}>{savedRecipe.title}</option>
-                                      ))}
-                                    </select>
-                                    <div className="mt-3 min-w-0 min-h-[96px]">
-                                      {recipe ? (
-                                        <div className="min-w-0 space-y-2">
-                                          <p className="text-[13px] font-semibold leading-snug text-[#111111] break-words [overflow-wrap:anywhere]">{recipe.title}</p>
-                                          <div className="flex min-w-0 flex-wrap gap-2 text-[11px] text-[#6B7280]">
-                                            <span className="min-w-0 max-w-full rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize break-words [overflow-wrap:anywhere]">{recipe.mealType}</span>
-                                            {recipe.styleTag ? <span className="min-w-0 max-w-full rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 break-words [overflow-wrap:anywhere]">{recipe.styleTag}</span> : null}
-                                            {recipe.isFavorite ? <span className="whitespace-nowrap rounded-full bg-[rgba(245,158,11,0.14)] px-2 py-0.5 text-[#B45309]">Favorite</span> : null}
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        <div className="flex h-full items-center text-[13px] leading-relaxed text-[#6B7280]">No recipe assigned</div>
-                                      )}
+                              {assignedRecipes.length > 0 ? assignedRecipes.map((recipe, dishIndex) => (
+                                <button
+                                  key={`${day}-${slot}-${dishIndex}`}
+                                  onClick={() => openPlannerRecipePicker(day, slot, dishIndex)}
+                                  className="flex w-full min-w-0 items-start justify-between gap-3 rounded-xl border border-[rgba(107,114,128,0.14)] bg-white px-3 py-3 text-left transition hover:border-[rgba(107,114,128,0.24)] hover:bg-[#FCFCFD]"
+                                >
+                                  <div className="min-w-0 flex-1 space-y-1">
+                                    <p className="text-[13px] font-semibold leading-snug text-[#111111] break-words [overflow-wrap:anywhere]">{recipe.title}</p>
+                                    <div className="flex min-w-0 flex-wrap gap-2 text-[11px] text-[#6B7280]">
+                                      <span className="min-w-0 max-w-full rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize break-words [overflow-wrap:anywhere]">{recipe.mealType}</span>
+                                      {recipe.styleTag ? <span className="min-w-0 max-w-full rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 break-words [overflow-wrap:anywhere]">{recipe.styleTag}</span> : null}
+                                      {recipe.isFavorite ? <span className="whitespace-nowrap rounded-full bg-[rgba(245,158,11,0.14)] px-2 py-0.5 text-[#B45309]">Favorite</span> : null}
                                     </div>
                                   </div>
-                                );
-                              })}
+                                  <span className="shrink-0 text-[11px] font-medium text-[#6B7280]">Edit</span>
+                                </button>
+                              )) : (
+                                <button
+                                  onClick={() => addDishToPlannerSlot(day, slot)}
+                                  className="flex min-h-[112px] w-full items-center justify-center rounded-xl border border-dashed border-[#D1D5DB] bg-[rgba(107,114,128,0.03)] px-4 py-5 text-center transition hover:border-[#9CA3AF] hover:bg-[rgba(107,114,128,0.05)]"
+                                >
+                                  <span className="text-[42px] font-light leading-none text-[#4B5563]">+</span>
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1140,6 +1150,62 @@ export default function App() {
           developerContent
         )}
       </main>
+
+      {plannerPickerTarget && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(17,17,17,0.35)] p-4 sm:items-center" onClick={() => setPlannerPickerTarget(null)}>
+          <div className="w-full max-w-lg overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.18)]" onClick={(e) => e.stopPropagation()}>
+            <div className="border-b border-[#E5E7EB] px-5 py-4">
+              <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Select Dish</p>
+              <h3 className="mt-1 text-[20px] font-semibold text-[#111111]">{plannerPickerTarget.day} · {plannerPickerTarget.slot}</h3>
+            </div>
+            <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 py-4">
+              {recipes.length > 0 ? recipes.map((recipe) => (
+                <button
+                  key={recipe.id}
+                  onClick={() => {
+                    assignRecipeToPlannerSlot(plannerPickerTarget.day, plannerPickerTarget.slot, plannerPickerTarget.dishIndex, recipe.id);
+                    setPlannerPickerTarget(null);
+                  }}
+                  className="flex w-full min-w-0 items-start justify-between gap-3 rounded-2xl border border-[#E5E7EB] bg-[#FBFBFC] px-4 py-3 text-left transition hover:border-[rgba(107,114,128,0.24)] hover:bg-white"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-semibold leading-snug text-[#111111] break-words [overflow-wrap:anywhere]">{recipe.title}</p>
+                    <div className="mt-1 flex min-w-0 flex-wrap gap-2 text-[11px] text-[#6B7280]">
+                      <span className="rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize">{recipe.mealType}</span>
+                      {recipe.styleTag ? <span className="min-w-0 max-w-full rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 break-words [overflow-wrap:anywhere]">{recipe.styleTag}</span> : null}
+                      {recipe.isFavorite ? <span className="rounded-full bg-[rgba(245,158,11,0.14)] px-2 py-0.5 text-[#B45309]">Favorite</span> : null}
+                    </div>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-[rgba(107,114,128,0.08)] px-3 py-1 text-[11px] font-medium text-[#4B5563]">Select</span>
+                </button>
+              )) : (
+                <div className="rounded-2xl border border-dashed border-[#D1D5DB] bg-[#F7F8FA] px-4 py-6 text-center text-[14px] leading-relaxed text-[#6B7280]">
+                  No saved recipes yet. Save a recipe first, then assign it here.
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E5E7EB] px-5 py-4">
+              <button
+                onClick={() => setPlannerPickerTarget(null)}
+                className={secondaryButtonClass}
+              >
+                Cancel
+              </button>
+              {getPlannerSlotRecipeIds(plannerPickerTarget.day, plannerPickerTarget.slot)[plannerPickerTarget.dishIndex] ? (
+                <button
+                  onClick={() => {
+                    removeRecipeFromPlannerSlot(plannerPickerTarget.day, plannerPickerTarget.slot, plannerPickerTarget.dishIndex);
+                    setPlannerPickerTarget(null);
+                  }}
+                  className="rounded-xl border border-[rgba(239,68,68,0.2)] bg-[rgba(239,68,68,0.08)] px-4 py-2.5 text-[12px] font-semibold text-[#B91C1C] transition hover:bg-[rgba(239,68,68,0.12)]"
+                >
+                  Remove Dish
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedSavedRecipe && (
         <div className="fixed inset-0 z-40 flex items-end justify-center bg-[rgba(17,17,17,0.45)] p-4 sm:items-center">
