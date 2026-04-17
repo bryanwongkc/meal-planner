@@ -25,6 +25,26 @@ const inputClass = 'w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3
 const selectClass = 'min-w-0 w-full max-w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[15px] font-medium text-[#111111] outline-none transition focus:border-[#6B7280] focus:ring-2 focus:ring-[rgba(107,114,128,0.12)]';
 const primaryButtonClass = 'rounded-xl bg-[#4B5563] px-5 py-3 text-[13px] font-semibold text-white transition duration-200 ease-out hover:bg-[#374151] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#D1D5DB]';
 const secondaryButtonClass = 'rounded-xl border border-[rgba(107,114,128,0.22)] bg-[rgba(107,114,128,0.08)] px-4 py-2.5 text-[12px] font-semibold text-[#4B5563] transition duration-200 ease-out hover:bg-[rgba(107,114,128,0.12)] active:scale-[0.98]';
+const createEmptyWeeklyPlanner = () => (
+  WEEK_DAYS.reduce((acc, day) => ({
+    ...acc,
+    [day]: { Breakfast: [], Lunch: [], Dinner: [] }
+  }), {})
+);
+
+const normalizeWeeklyPlanner = (planner) => (
+  WEEK_DAYS.reduce((acc, day) => {
+    const dayPlan = planner?.[day] || {};
+
+    acc[day] = MEAL_TYPES.reduce((slots, slot) => {
+      const recipeIds = Array.isArray(dayPlan?.[slot]) ? dayPlan[slot].filter(Boolean) : [];
+      slots[slot] = recipeIds;
+      return slots;
+    }, {});
+
+    return acc;
+  }, {})
+);
 
 function Section({ title, icon: Icon, children, compact = false }) {
   return (
@@ -205,16 +225,13 @@ export default function App() {
   const [recipeQuestion, setRecipeQuestion] = useState('');
   const [recipeAnswer, setRecipeAnswer] = useState('');
   const [recipeQuestionLoading, setRecipeQuestionLoading] = useState(false);
-  const [weeklyPlanner, setWeeklyPlanner] = useState(() => (
-    WEEK_DAYS.reduce((acc, day) => ({
-      ...acc,
-      [day]: { Breakfast: [''], Lunch: [''], Dinner: [''] }
-    }), {})
-  ));
+  const [weeklyPlanner, setWeeklyPlanner] = useState(createEmptyWeeklyPlanner);
   const [savedMealFilter, setSavedMealFilter] = useState('All');
   const [savedSearch, setSavedSearch] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const longPressTimerRef = useRef(null);
+  const hasLoadedWeeklyPlannerRef = useRef(false);
+  const lastSyncedWeeklyPlannerRef = useRef(JSON.stringify(createEmptyWeeklyPlanner()));
 
   const isMobileLayout = layoutMode === 'mobile';
   const trackClass = 'w-full cursor-pointer accent-[#4B5563]';
@@ -248,6 +265,42 @@ export default function App() {
       clearTimeout(longPressTimerRef.current);
     }
   }, []);
+
+  useEffect(() => {
+    const weeklyPlannerRef = doc(db, 'planner', 'weekly');
+
+    const unsubscribe = onSnapshot(weeklyPlannerRef, async (snapshot) => {
+      if (!snapshot.exists()) {
+        const emptyPlanner = createEmptyWeeklyPlanner();
+        await setDoc(weeklyPlannerRef, {
+          plan: emptyPlanner,
+          updatedAt: serverTimestamp()
+        });
+        lastSyncedWeeklyPlannerRef.current = JSON.stringify(emptyPlanner);
+        return;
+      }
+
+      const normalizedPlanner = normalizeWeeklyPlanner(snapshot.data()?.plan);
+      lastSyncedWeeklyPlannerRef.current = JSON.stringify(normalizedPlanner);
+      setWeeklyPlanner(normalizedPlanner);
+      hasLoadedWeeklyPlannerRef.current = true;
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedWeeklyPlannerRef.current) return;
+    const serializedPlanner = JSON.stringify(weeklyPlanner);
+    if (serializedPlanner === lastSyncedWeeklyPlannerRef.current) return;
+
+    const weeklyPlannerRef = doc(db, 'planner', 'weekly');
+    lastSyncedWeeklyPlannerRef.current = serializedPlanner;
+    setDoc(weeklyPlannerRef, {
+      plan: weeklyPlanner,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  }, [weeklyPlanner]);
 
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current) {
