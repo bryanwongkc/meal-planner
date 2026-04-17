@@ -46,11 +46,11 @@ const normalizeWeeklyPlanner = (planner) => (
   }, {})
 );
 
-function Section({ title, icon: Icon, children, compact = false }) {
+function Section({ title, icon, children, compact = false }) {
   return (
     <section className={compact ? 'min-w-0 rounded-xl border border-[#EEEEEE] bg-white p-4 shadow-[0_4px_14px_rgba(0,0,0,0.035)]' : card}>
       <div className={`${compact ? 'mb-4' : 'mb-6'} flex items-center gap-3`}>
-        <div className={`${compact ? 'rounded-lg p-2' : 'rounded-xl p-2.5'} bg-[rgba(107,114,128,0.08)] text-[#4B5563]`}><Icon size={compact ? 14 : 16} /></div>
+        <div className={`${compact ? 'rounded-lg p-2' : 'rounded-xl p-2.5'} bg-[rgba(107,114,128,0.08)] text-[#4B5563]`}>{React.createElement(icon, { size: compact ? 14 : 16 })}</div>
         <h3 className={`${compact ? 'text-[18px]' : 'text-[20px]'} font-semibold tracking-[-0.02em] text-[#111111]`}>{title}</h3>
       </div>
       {children}
@@ -237,7 +237,6 @@ export default function App() {
   const trackClass = 'w-full cursor-pointer accent-[#4B5563]';
   const sectionCardClass = isMobileLayout ? 'min-w-0 rounded-xl border border-[#EEEEEE] bg-white p-4 shadow-[0_4px_14px_rgba(0,0,0,0.035)]' : card;
   const compactGapClass = isMobileLayout ? 'space-y-3' : 'space-y-5';
-  const compactStackClass = isMobileLayout ? 'space-y-4' : 'space-y-6';
   const getSavedGeneratedRecipe = (recipe) => recipes.find((savedRecipe) => savedRecipe.title === getRecipeTitle(recipe, mealType));
   const getRecipeById = (recipeId) => recipes.find((recipe) => recipe.id === recipeId);
   const filteredSavedRecipes = recipes.filter((recipe) => {
@@ -428,7 +427,6 @@ export default function App() {
       ? "Include a 'toddlerAdaptation' string for each dish."
       : "Do not include toddlerAdaptation.";
     const cookingTipsInstruction = 'Include 3 to 5 short, practical, actionable cookingTips for each dish.';
-    const preferenceInstruction = todayPreference.trim() ? `TODAY PREFERENCE: ${todayPreference.trim()}.` : '';
     const flavorHealthInstruction = `FLAVOR VS HEALTH: ${flavorHealthBalance}/100 (${getFlavorHealthLabel(flavorHealthBalance)}). Reflect this balance in ingredient choices, cooking method, seasoning intensity, richness, and oil or sauce usage.`;
     const mealTypeInstruction = getMealTypeInstruction(mealType);
     const styleInstruction = getStyleInstruction(styleLabel);
@@ -599,12 +597,6 @@ export default function App() {
     }
   };
 
-  const openRecipeQuestionModal = (recipe) => {
-    setRecipeQuestionTarget(recipe);
-    setRecipeQuestion('');
-    setRecipeAnswer('');
-  };
-
   const assignRecipeToPlannerSlot = (day, slot, dishIndex, recipeId) => {
     setWeeklyPlanner((current) => ({
       ...current,
@@ -643,6 +635,9 @@ export default function App() {
 
   const getPlannerSlotRecipeIds = (day, slot) => weeklyPlanner[day][slot].filter(Boolean);
   const getPlannerSlotRecipes = (day, slot) => getPlannerSlotRecipeIds(day, slot).map((recipeId) => getRecipeById(recipeId)).filter(Boolean);
+  const getAllPlannedRecipes = () => (
+    WEEK_DAYS.flatMap((day) => MEAL_TYPES.flatMap((slot) => getPlannerSlotRecipes(day, slot)))
+  );
 
   const buildWeeklyPlanShareText = () => (
     [
@@ -657,6 +652,36 @@ export default function App() {
       ])
     ].join('\n')
   );
+
+  const buildWeeklyGroceryListText = () => {
+    const ingredientCounts = new Map();
+
+    getAllPlannedRecipes().forEach((recipe) => {
+      recipe.ingredients?.forEach((ingredient) => {
+        const normalizedIngredient = ingredient?.trim();
+        if (!normalizedIngredient) return;
+
+        const key = normalizedIngredient.toLowerCase();
+        const existing = ingredientCounts.get(key);
+
+        if (existing) {
+          existing.count += 1;
+        } else {
+          ingredientCounts.set(key, { label: normalizedIngredient, count: 1 });
+        }
+      });
+    });
+
+    const groceryItems = Array.from(ingredientCounts.values())
+      .sort((a, b) => a.label.localeCompare(b.label))
+      .map(({ label, count }) => `- ${label}${count > 1 ? ` x${count}` : ''}`);
+
+    return [
+      'CulinaFusion Grocery List',
+      '',
+      ...(groceryItems.length > 0 ? groceryItems : ['- No planned dishes yet'])
+    ].join('\n');
+  };
 
   const shareWeeklyPlan = async () => {
     const shareText = buildWeeklyPlanShareText();
@@ -679,6 +704,30 @@ export default function App() {
       setError('Sharing is not available on this device.');
     } catch {
       setError('Unable to share weekly plan.');
+    }
+  };
+
+  const exportWeeklyGroceryList = async () => {
+    const groceryListText = buildWeeklyGroceryListText();
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'CulinaFusion Grocery List',
+          text: groceryListText
+        });
+        return;
+      }
+
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(groceryListText);
+        setError('Grocery list copied to clipboard.');
+        return;
+      }
+
+      setError('Export is not available on this device.');
+    } catch {
+      setError('Unable to export grocery list.');
     }
   };
 
@@ -913,9 +962,14 @@ export default function App() {
                 Assign saved recipes to breakfast, lunch, and dinner slots for each day.
               </p>
             </div>
-            <button onClick={shareWeeklyPlan} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
-              Share Plan
-            </button>
+            <div className={`flex ${isMobileLayout ? 'flex-col gap-3' : 'items-center gap-3'}`}>
+              <button onClick={exportWeeklyGroceryList} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
+                Export Grocery List
+              </button>
+              <button onClick={shareWeeklyPlan} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
+                Share Plan
+              </button>
+            </div>
           </div>
           {isMobileLayout ? (
             <div className="grid gap-3 grid-cols-1">
@@ -1105,7 +1159,7 @@ export default function App() {
                 { id: 'saved', label: 'Saved Recipes', icon: Star },
                 { id: 'rules', label: 'Dietary Rules', icon: ShieldCheck },
                 { id: 'developer', label: 'Developer', icon: Menu }
-              ].map(({ id, label, icon: Icon }) => (
+              ].map(({ id, label, icon }) => (
                 <button
                   key={id}
                   onClick={() => {
@@ -1118,7 +1172,7 @@ export default function App() {
                       : 'text-[#4B5563] hover:bg-[rgba(107,114,128,0.08)]'
                   }`}
                 >
-                  <Icon size={16} />
+                  {React.createElement(icon, { size: 16 })}
                   <span>{label}</span>
                 </button>
               ))}
