@@ -392,6 +392,7 @@ export default function App() {
   const [activeSavedRecipeActions, setActiveSavedRecipeActions] = useState(null);
   const [plannerPickerTarget, setPlannerPickerTarget] = useState(null);
   const [plannerAssignmentTarget, setPlannerAssignmentTarget] = useState(null);
+  const [groceryPlannerDaysTarget, setGroceryPlannerDaysTarget] = useState(null);
   const [recipeQuestionTarget, setRecipeQuestionTarget] = useState(null);
   const [recipeQuestion, setRecipeQuestion] = useState('');
   const [recipeAnswer, setRecipeAnswer] = useState('');
@@ -882,8 +883,8 @@ export default function App() {
 
   const getPlannerSlotRecipeIds = (day, slot) => weeklyPlanner[day][slot].filter(Boolean);
   const getPlannerSlotRecipes = (day, slot) => getPlannerSlotRecipeIds(day, slot).map((recipeId) => getRecipeById(recipeId)).filter(Boolean);
-  const getAllPlannedRecipes = () => (
-    WEEK_DAYS.flatMap((day) => MEAL_TYPES.flatMap((slot) => getPlannerSlotRecipes(day, slot)))
+  const getAllPlannedRecipes = (selectedDays = WEEK_DAYS) => (
+    selectedDays.flatMap((day) => MEAL_TYPES.flatMap((slot) => getPlannerSlotRecipes(day, slot)))
   );
 
   const buildWeeklyPlanShareText = () => (
@@ -900,10 +901,10 @@ export default function App() {
     ].join('\n')
   );
 
-  const buildWeeklyGroceryItems = () => {
+  const buildWeeklyGroceryItems = (selectedDays = WEEK_DAYS) => {
     const ingredientCounts = new Map();
 
-    getAllPlannedRecipes().forEach((recipe) => {
+    getAllPlannedRecipes(selectedDays).forEach((recipe) => {
       recipe.ingredients?.forEach((ingredient) => {
         const normalizedIngredient = normalizeGroceryIngredient(ingredient);
         if (!normalizedIngredient) return;
@@ -990,8 +991,28 @@ export default function App() {
     }
   };
 
-  const generateWeeklyGroceryList = async () => {
-    const plannedRecipes = getAllPlannedRecipes();
+  const openWeeklyGroceryPlannerModal = () => {
+    setGroceryPlannerDaysTarget({
+      selectedDays: [...WEEK_DAYS]
+    });
+  };
+
+  const toggleGroceryPlannerDay = (day) => {
+    setGroceryPlannerDaysTarget((current) => {
+      if (!current) return current;
+      const nextSelectedDays = current.selectedDays.includes(day)
+        ? current.selectedDays.filter((selectedDay) => selectedDay !== day)
+        : [...current.selectedDays, day];
+
+      return {
+        ...current,
+        selectedDays: nextSelectedDays
+      };
+    });
+  };
+
+  const generateWeeklyGroceryList = async (selectedDays = WEEK_DAYS) => {
+    const plannedRecipes = getAllPlannedRecipes(selectedDays);
 
     if (plannedRecipes.length === 0) {
       await setDoc(doc(db, 'planner', 'groceryList'), {
@@ -999,6 +1020,7 @@ export default function App() {
         items: []
       }, { merge: true });
       setCurrentView('grocery');
+      setGroceryPlannerDaysTarget(null);
       return;
     }
 
@@ -1085,15 +1107,20 @@ export default function App() {
         items: mergedItems
       }, { merge: true });
       setCurrentView('grocery');
+      setGroceryPlannerDaysTarget(null);
     } catch {
-      const fallbackItems = mergeGroceryItemsWithExistingState(buildWeeklyGroceryItems().map((item) => item.label));
+      const fallbackItems = mergeGroceryItemsWithExistingState(buildWeeklyGroceryItems(selectedDays).map((item) => item.label));
       await setDoc(doc(db, 'planner', 'groceryList'), {
         generatedAt: serverTimestamp(),
         items: fallbackItems
       }, { merge: true });
       setError('Gemini grocery consolidation failed. A basic grocery list was generated instead.');
       setCurrentView('grocery');
+      setGroceryPlannerDaysTarget(null);
+      return;
     }
+
+    setGroceryPlannerDaysTarget(null);
   };
 
   const shareGroceryList = async () => {
@@ -1463,7 +1490,7 @@ export default function App() {
               </p>
             </div>
             <div className={`flex ${isMobileLayout ? 'flex-col gap-3' : 'items-center gap-3'}`}>
-              <button onClick={generateWeeklyGroceryList} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
+              <button onClick={openWeeklyGroceryPlannerModal} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
                 Grocery List
               </button>
               <button onClick={shareWeeklyPlan} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
@@ -1865,6 +1892,48 @@ export default function App() {
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E5E7EB] px-5 py-4">
               <button onClick={() => setPlannerAssignmentTarget(null)} className={secondaryButtonClass}>Cancel</button>
               <button onClick={assignTargetRecipeToPlanner} className={primaryButtonClass}>Add</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {groceryPlannerDaysTarget && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(17,17,17,0.35)] p-4 sm:items-center" onClick={() => setGroceryPlannerDaysTarget(null)}>
+          <div className="w-full max-w-md overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.18)]" onClick={(e) => e.stopPropagation()}>
+            <div className="border-b border-[#E5E7EB] px-5 py-4">
+              <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Generate Grocery List</p>
+              <h3 className="mt-1 text-[20px] font-semibold text-[#111111]">Select Weekdays</h3>
+            </div>
+            <div className="space-y-3 px-5 py-4">
+              <p className="text-[14px] text-[#6B7280]">Only dishes planned on the selected days will be used for the grocery list.</p>
+              <div className="grid grid-cols-2 gap-3">
+                {WEEK_DAYS.map((day) => {
+                  const isSelected = groceryPlannerDaysTarget.selectedDays.includes(day);
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => toggleGroceryPlannerDay(day)}
+                      className={`rounded-xl border px-4 py-3 text-left text-[14px] font-medium transition ${
+                        isSelected
+                          ? 'border-[#4B5563] bg-[rgba(107,114,128,0.08)] text-[#111111]'
+                          : 'border-[#E5E7EB] bg-white text-[#6B7280]'
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E5E7EB] px-5 py-4">
+              <button onClick={() => setGroceryPlannerDaysTarget(null)} className={secondaryButtonClass}>Cancel</button>
+              <button
+                onClick={() => generateWeeklyGroceryList(groceryPlannerDaysTarget.selectedDays)}
+                className={primaryButtonClass}
+                disabled={groceryPlannerDaysTarget.selectedDays.length === 0}
+              >
+                Generate
+              </button>
             </div>
           </div>
         </div>
