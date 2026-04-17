@@ -1147,6 +1147,23 @@ export default function App() {
     }
   };
 
+  const clearWeeklyPlanner = async () => {
+    const emptyPlanner = createEmptyWeeklyPlanner();
+    await setDoc(doc(db, 'planner', 'weekly'), {
+      plan: emptyPlanner,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    setWeeklyPlanner(emptyPlanner);
+  };
+
+  const clearGroceryList = async () => {
+    await setDoc(doc(db, 'planner', 'groceryList'), {
+      generatedAt: serverTimestamp(),
+      items: []
+    }, { merge: true });
+    setNewGroceryItem('');
+  };
+
   const updateGroceryItems = async (items) => {
     await setDoc(doc(db, 'planner', 'groceryList'), {
       items
@@ -1405,6 +1422,9 @@ export default function App() {
               <button onClick={shareGroceryList} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
                 Share
               </button>
+              <button onClick={clearGroceryList} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
+                Clear All
+              </button>
             </div>
           </div>
 
@@ -1495,6 +1515,9 @@ export default function App() {
               </button>
               <button onClick={shareWeeklyPlan} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
                 Share Plan
+              </button>
+              <button onClick={clearWeeklyPlanner} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
+                Clear All
               </button>
             </div>
           </div>
