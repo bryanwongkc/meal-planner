@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Baby, ChefHat, Clock, Flame, LayoutGrid, Loader2, Menu, Monitor,
+  Baby, ChefHat, ChevronDown, Clock, Flame, LayoutGrid, Loader2, Menu, Monitor,
   MessageSquareMore, Plus, RefreshCcw, Settings2, ShieldCheck, Smartphone, Sparkles, Star,
   Trash2, Undo2, Users, XCircle
 } from 'lucide-react';
@@ -58,7 +58,74 @@ function Section({ title, icon, children, compact = false }) {
   );
 }
 
-function IngredientBlock({ title, items, options, type, dot, addIngredient, removeIngredient, updateIngredient, compact = false }) {
+function IngredientOptionPicker({ item, options, type, index, updateIngredient, deleteIngredientOption }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+  const selectedLabel = item.value === 'CUSTOM_VAL' ? 'Custom...' : item.value;
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (!containerRef.current?.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+    };
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative min-w-0 flex-1">
+      <button
+        type="button"
+        onClick={() => setIsOpen((value) => !value)}
+        className="flex w-full min-w-0 items-center justify-between gap-2 bg-transparent text-left text-[15px] font-medium text-[#111111] outline-none"
+      >
+        <span className="min-w-0 break-words [overflow-wrap:anywhere]">{selectedLabel}</span>
+        <ChevronDown size={16} className={`shrink-0 text-[#6B7280] transition ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="absolute left-0 top-[calc(100%+0.5rem)] z-20 w-full min-w-0 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_16px_32px_rgba(0,0,0,0.12)]">
+          <div className="max-h-60 overflow-y-auto p-2">
+            {options.map((option) => (
+              <div key={option} className="flex items-center gap-2 rounded-lg px-2 py-2 hover:bg-[rgba(107,114,128,0.08)]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateIngredient(type, index, 'value', option);
+                    setIsOpen(false);
+                  }}
+                  className="min-w-0 flex-1 text-left text-[14px] font-medium text-[#111111]"
+                >
+                  <span className="break-words [overflow-wrap:anywhere]">{option === 'CUSTOM_VAL' ? 'Custom...' : option}</span>
+                </button>
+                {option !== 'CUSTOM_VAL' && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      deleteIngredientOption(type, option);
+                    }}
+                    className="shrink-0 rounded-md px-2 py-1 text-[14px] font-semibold leading-none text-[#6B7280] transition hover:bg-[rgba(107,114,128,0.12)] hover:text-[#4B5563]"
+                    aria-label={`Delete ${option} from ${type} options`}
+                  >
+                    -
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IngredientBlock({ title, items, options, type, dot, addIngredient, removeIngredient, updateIngredient, deleteIngredientOption, compact = false }) {
   return (
     <Section title={title} icon={Plus} compact={compact}>
       <div className={`${compact ? 'mb-3' : 'mb-4'} flex items-center justify-between`}>
@@ -73,10 +140,8 @@ function IngredientBlock({ title, items, options, type, dot, addIngredient, remo
           <div key={`${type}-${index}`} className={`rounded-xl border border-[#E5E7EB] bg-white ${compact ? 'p-2.5' : 'p-3'}`}>
             <div className="flex items-center gap-2">
               <div className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
-              <select className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-[#111111] outline-none" value={item.value} onChange={(e) => updateIngredient(type, index, 'value', e.target.value)}>
-                {options.map((option) => <option key={option} value={option}>{option === 'CUSTOM_VAL' ? 'Custom...' : option}</option>)}
-              </select>
-              <button onClick={() => removeIngredient(type, index)} className="rounded-lg px-2 py-1 text-[16px] font-semibold leading-none text-[#6B7280] transition hover:bg-[rgba(107,114,128,0.08)] hover:text-[#4B5563]" aria-label={`Remove ${title} item`}>-</button>
+              <IngredientOptionPicker item={item} options={options} type={type} index={index} updateIngredient={updateIngredient} deleteIngredientOption={deleteIngredientOption} />
+              <button onClick={() => removeIngredient(type, index)} className="rounded-lg p-1.5 text-[#6B7280] transition hover:bg-[rgba(107,114,128,0.08)] hover:text-[#4B5563]" aria-label={`Remove selected ${title} item`}><Trash2 size={15} /></button>
             </div>
             {item.value === 'CUSTOM_VAL' && <input type="text" placeholder={type === 'protein' ? 'Protein name...' : 'Veggie name...'} className={`${inputClass} mt-3`} value={item.customText} onChange={(e) => updateIngredient(type, index, 'customText', e.target.value)} onBlur={() => updateIngredient(type, index, 'commitCustom', item.customText)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); updateIngredient(type, index, 'commitCustom', item.customText); } }} />}
           </div>
@@ -403,6 +468,10 @@ export default function App() {
     }, { merge: true });
 
     return trimmedLabel;
+  };
+  const deleteIngredientOption = async (type, label) => {
+    const collectionName = type === 'protein' ? 'proteinOptions' : 'fiberOptions';
+    await deleteDoc(doc(db, collectionName, slugifyOption(label)));
   };
   const updateIngredient = async (type, index, field, value) => {
     const target = type === 'protein' ? proteins : fibers;
@@ -805,8 +874,8 @@ export default function App() {
         </div>
       </section>
       <div className={`grid ${isMobileLayout ? 'gap-3 grid-cols-1' : 'gap-5 grid-cols-2'}`}>
-        <IngredientBlock title="Proteins" items={proteins} options={proteinDropdownOptions} type="protein" dot="bg-[#6B7280]" addIngredient={addIngredient} removeIngredient={removeIngredient} updateIngredient={updateIngredient} compact={isMobileLayout} />
-        <IngredientBlock title="Veggies" items={fibers} options={fiberDropdownOptions} type="fiber" dot="bg-[#6B7280]" addIngredient={addIngredient} removeIngredient={removeIngredient} updateIngredient={updateIngredient} compact={isMobileLayout} />
+        <IngredientBlock title="Proteins" items={proteins} options={proteinDropdownOptions} type="protein" dot="bg-[#6B7280]" addIngredient={addIngredient} removeIngredient={removeIngredient} updateIngredient={updateIngredient} deleteIngredientOption={deleteIngredientOption} compact={isMobileLayout} />
+        <IngredientBlock title="Veggies" items={fibers} options={fiberDropdownOptions} type="fiber" dot="bg-[#6B7280]" addIngredient={addIngredient} removeIngredient={removeIngredient} updateIngredient={updateIngredient} deleteIngredientOption={deleteIngredientOption} compact={isMobileLayout} />
       </div>
       <section className={sectionCardClass}>
         <div className={`${isMobileLayout ? 'mb-4' : 'mb-6'} flex items-center gap-3`}>
