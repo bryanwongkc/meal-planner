@@ -887,6 +887,27 @@ export default function App() {
       }));
   };
 
+  const mergeGroceryItemsWithExistingState = (labels) => {
+    const previousItemsById = new Map((groceryList.items || []).map((item) => [item.id, item]));
+    const uniqueItems = new Map();
+
+    labels.forEach((label) => {
+      const normalizedIngredient = normalizeGroceryIngredient(label);
+      if (!normalizedIngredient) return;
+
+      const existing = uniqueItems.get(normalizedIngredient.key);
+      if (existing) return;
+
+      uniqueItems.set(normalizedIngredient.key, {
+        id: normalizedIngredient.key,
+        label: normalizedIngredient.label,
+        checked: previousItemsById.get(normalizedIngredient.key)?.checked || false
+      });
+    });
+
+    return Array.from(uniqueItems.values()).sort((a, b) => a.label.localeCompare(b.label));
+  };
+
   const buildGroceryListShareText = () => {
     const groceryItems = groceryList.items || [];
 
@@ -923,17 +944,97 @@ export default function App() {
   };
 
   const generateWeeklyGroceryList = async () => {
-    const nextItems = buildWeeklyGroceryItems();
-    const previousItemsById = new Map((groceryList.items || []).map((item) => [item.id, item]));
-    const mergedItems = nextItems.map((item) => ({
-      ...item,
-      checked: previousItemsById.get(item.id)?.checked || false
-    }));
-    await setDoc(doc(db, 'planner', 'groceryList'), {
-      generatedAt: serverTimestamp(),
-      items: mergedItems
-    }, { merge: true });
-    setCurrentView('grocery');
+    const plannedRecipes = getAllPlannedRecipes();
+
+    if (plannedRecipes.length === 0) {
+      await setDoc(doc(db, 'planner', 'groceryList'), {
+        generatedAt: serverTimestamp(),
+        items: []
+      }, { merge: true });
+      setCurrentView('grocery');
+      return;
+    }
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const model = 'gemini-3.1-flash-lite-preview';
+
+    if (!apiKey) {
+      setError('Missing Gemini API key. Set VITE_GEMINI_API_KEY in your Vercel environment variables.');
+      return;
+    }
+
+    const prompt = [
+      'ROLE',
+      'You are a practical grocery consolidation assistant.',
+      '',
+      buildPromptSection('TASK', [
+        'Consolidate the weekly meal plan into one sensible grocery shopping list.',
+        'Merge duplicate ingredients across recipes.',
+        'For pantry seasonings such as sugar, salt, soy sauce, vinegar, pepper, cornstarch, oils, and similar staples: output only the base ingredient name with no count suffix.',
+        'For non-seasoning ingredients: preserve useful quantity or weight text when present.',
+        'Do not include recipe titles or explanations.',
+        'Return only grocery item labels that should appear in the final list.'
+      ]),
+      '',
+      buildPromptSection('WEEKLY RECIPES', plannedRecipes.map((recipe, index) => (
+        `RECIPE ${index + 1}: ${getDisplayRecipeTitle(recipe)} | INGREDIENTS: ${recipe.ingredients?.join(', ') || 'None'}`
+      ))),
+      '',
+      buildPromptSection('OUTPUT REQUIREMENTS', [
+        'Return a JSON array of strings.',
+        'Each string must be one grocery line item only.',
+        'No markdown, no numbering, no extra commentary.'
+      ])
+    ].join('\n');
+
+    setLastGeminiPrompt(prompt);
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: 'ARRAY',
+              items: { type: 'STRING' }
+            }
+          }
+        })
+      });
+
+      let data = null;
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+
+      if (!response.ok) throw new Error(`API call failed with status ${response.status}`);
+
+      const resultText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!resultText) throw new Error('API returned no grocery payload');
+
+      const parsedItems = JSON.parse(resultText);
+      const groceryLabels = Array.isArray(parsedItems) ? parsedItems.filter((item) => typeof item === 'string') : [];
+      const mergedItems = mergeGroceryItemsWithExistingState(groceryLabels);
+
+      await setDoc(doc(db, 'planner', 'groceryList'), {
+        generatedAt: serverTimestamp(),
+        items: mergedItems
+      }, { merge: true });
+      setCurrentView('grocery');
+    } catch {
+      const fallbackItems = mergeGroceryItemsWithExistingState(buildWeeklyGroceryItems().map((item) => item.label));
+      await setDoc(doc(db, 'planner', 'groceryList'), {
+        generatedAt: serverTimestamp(),
+        items: fallbackItems
+      }, { merge: true });
+      setError('Gemini grocery consolidation failed. A basic grocery list was generated instead.');
+      setCurrentView('grocery');
+    }
   };
 
   const shareGroceryList = async () => {
