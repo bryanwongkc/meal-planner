@@ -289,14 +289,16 @@ const normalizeGroceryIngredient = (ingredient) => {
 
   const lowered = compact.toLowerCase();
   const seasoningMatch = GROCERY_SEASONINGS.find((seasoning) => lowered.includes(seasoning));
-  const label = seasoningMatch || compact || raw;
+  const baseLabel = seasoningMatch || compact || raw;
+  const label = seasoningMatch ? baseLabel : raw;
 
   return {
     key: slugifyGroceryItem(label),
     label: label
       .split(' ')
       .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : part))
-      .join(' ')
+      .join(' '),
+    isSeasoning: Boolean(seasoningMatch)
   };
 };
 
@@ -865,7 +867,7 @@ export default function App() {
         if (existing) {
           existing.count += 1;
         } else {
-          ingredientCounts.set(key, { label: normalizedIngredient.label, count: 1 });
+          ingredientCounts.set(key, { label: normalizedIngredient.label, count: 1, isSeasoning: normalizedIngredient.isSeasoning });
         }
       });
     });
@@ -878,9 +880,9 @@ export default function App() {
         count: value.count
       }))
       .sort((a, b) => a.label.localeCompare(b.label))
-      .map(({ count, ...item }) => ({
+      .map(({ count, isSeasoning, ...item }) => ({
         ...item,
-        label: GROCERY_SEASONINGS.includes(item.label.toLowerCase()) ? item.label : `${item.label}${count > 1 ? ` x${count}` : ''}`
+        label: isSeasoning ? item.label : `${item.label}${count > 1 ? ` x${count}` : ''}`
       }));
   };
 
