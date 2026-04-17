@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Baby, ChefHat, ChevronDown, Clock, Flame, LayoutGrid, Loader2, Menu, Monitor,
+  Baby, ChefHat, ChevronDown, CheckSquare, Clock, Flame, LayoutGrid, Loader2, Menu, Monitor,
   MessageSquareMore, Plus, RefreshCcw, Settings2, ShieldCheck, Smartphone, Sparkles, Star,
   Trash2, Undo2, Users, XCircle
 } from 'lucide-react';
@@ -31,6 +31,7 @@ const createEmptyWeeklyPlanner = () => (
     [day]: { Breakfast: [], Lunch: [], Dinner: [] }
   }), {})
 );
+const GROCERY_SEASONINGS = ['salt', 'sugar', 'soy sauce', 'light soy sauce', 'dark soy sauce', 'sesame oil', 'oyster sauce', 'white pepper', 'black pepper', 'pepper', 'cornstarch', 'vinegar', 'rice vinegar', 'shaoxing wine', 'cooking wine', 'oil', 'olive oil', 'vegetable oil', 'chicken powder', 'bouillon', 'fish sauce', 'hoisin sauce'];
 
 const normalizeWeeklyPlanner = (planner) => (
   WEEK_DAYS.reduce((acc, day) => {
@@ -260,6 +261,44 @@ const useDietaryRules = () => {
 };
 
 const slugifyOption = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+const slugifyGroceryItem = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 80);
+
+const formatTimestamp = (value) => {
+  if (!value) return 'Not generated yet';
+  const date = typeof value?.toDate === 'function' ? value.toDate() : new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Not generated yet';
+  return new Intl.DateTimeFormat('en-HK', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  }).format(date);
+};
+
+const normalizeGroceryIngredient = (ingredient) => {
+  const raw = ingredient?.trim();
+  if (!raw) return null;
+
+  const compact = raw
+    .replace(/^[\d/\s.¼½¾⅓⅔⅛⅜⅝⅞]+/u, '')
+    .replace(/^(cups?|tbsp|tsp|teaspoons?|tablespoons?|cloves?|slices?|pieces?|pcs?|grams?|g|kg|ml|l)\b\.?/i, '')
+    .replace(/^of\s+/i, '')
+    .replace(/^[,.\s-]+|[,.\s-]+$/g, '')
+    .trim();
+
+  const lowered = compact.toLowerCase();
+  const seasoningMatch = GROCERY_SEASONINGS.find((seasoning) => lowered.includes(seasoning));
+  const label = seasoningMatch || compact || raw;
+
+  return {
+    key: slugifyGroceryItem(label),
+    label: label
+      .split(' ')
+      .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : part))
+      .join(' ')
+  };
+};
 
 const useIngredientOptions = (collectionName, defaultOptions) => {
   const [options, setOptions] = useState(defaultOptions);
@@ -290,6 +329,34 @@ const useIngredientOptions = (collectionName, defaultOptions) => {
   return options;
 };
 
+const useGroceryList = () => {
+  const [groceryList, setGroceryList] = useState({ generatedAt: null, items: [] });
+
+  useEffect(() => {
+    const groceryRef = doc(db, 'planner', 'groceryList');
+
+    const unsubscribe = onSnapshot(groceryRef, async (snapshot) => {
+      if (!snapshot.exists()) {
+        await setDoc(groceryRef, {
+          generatedAt: null,
+          items: []
+        });
+        return;
+      }
+
+      const data = snapshot.data();
+      setGroceryList({
+        generatedAt: data.generatedAt ?? null,
+        items: Array.isArray(data.items) ? data.items : []
+      });
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  return groceryList;
+};
+
 export default function App() {
   const [layoutMode, setLayoutMode] = useState(typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop');
   const [currentView, setCurrentView] = useState('main');
@@ -316,6 +383,7 @@ export default function App() {
   const [lastGeminiPrompt, setLastGeminiPrompt] = useState('');
   const recipes = useRecipes();
   const dietaryRules = useDietaryRules();
+  const groceryList = useGroceryList();
   const [selectedSavedRecipe, setSelectedSavedRecipe] = useState(null);
   const [activeSavedRecipeActions, setActiveSavedRecipeActions] = useState(null);
   const [plannerPickerTarget, setPlannerPickerTarget] = useState(null);
@@ -327,6 +395,7 @@ export default function App() {
   const [savedMealFilter, setSavedMealFilter] = useState('All');
   const [savedSearch, setSavedSearch] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [newGroceryItem, setNewGroceryItem] = useState('');
   const longPressTimerRef = useRef(null);
   const hasLoadedWeeklyPlannerRef = useRef(false);
   const lastSyncedWeeklyPlannerRef = useRef(JSON.stringify(createEmptyWeeklyPlanner()));
@@ -782,33 +851,47 @@ export default function App() {
     ].join('\n')
   );
 
-  const buildWeeklyGroceryListText = () => {
+  const buildWeeklyGroceryItems = () => {
     const ingredientCounts = new Map();
 
     getAllPlannedRecipes().forEach((recipe) => {
       recipe.ingredients?.forEach((ingredient) => {
-        const normalizedIngredient = ingredient?.trim();
+        const normalizedIngredient = normalizeGroceryIngredient(ingredient);
         if (!normalizedIngredient) return;
 
-        const key = normalizedIngredient.toLowerCase();
+        const key = normalizedIngredient.key;
         const existing = ingredientCounts.get(key);
 
         if (existing) {
           existing.count += 1;
         } else {
-          ingredientCounts.set(key, { label: normalizedIngredient, count: 1 });
+          ingredientCounts.set(key, { label: normalizedIngredient.label, count: 1 });
         }
       });
     });
 
-    const groceryItems = Array.from(ingredientCounts.values())
+    return Array.from(ingredientCounts.entries())
+      .map(([key, value]) => ({
+        id: key,
+        label: value.label,
+        checked: false,
+        count: value.count
+      }))
       .sort((a, b) => a.label.localeCompare(b.label))
-      .map(({ label, count }) => `- ${label}${count > 1 ? ` x${count}` : ''}`);
+      .map(({ count, ...item }) => ({
+        ...item,
+        label: GROCERY_SEASONINGS.includes(item.label.toLowerCase()) ? item.label : `${item.label}${count > 1 ? ` x${count}` : ''}`
+      }));
+  };
+
+  const buildGroceryListShareText = () => {
+    const groceryItems = groceryList.items || [];
 
     return [
       'CulinaFusion Grocery List',
+      `Generated: ${formatTimestamp(groceryList.generatedAt)}`,
       '',
-      ...(groceryItems.length > 0 ? groceryItems : ['- No planned dishes yet'])
+      ...(groceryItems.length > 0 ? groceryItems.map((item) => `- ${item.label}`) : ['- No planned dishes yet'])
     ].join('\n');
   };
 
@@ -836,8 +919,22 @@ export default function App() {
     }
   };
 
-  const exportWeeklyGroceryList = async () => {
-    const groceryListText = buildWeeklyGroceryListText();
+  const generateWeeklyGroceryList = async () => {
+    const nextItems = buildWeeklyGroceryItems();
+    const previousItemsById = new Map((groceryList.items || []).map((item) => [item.id, item]));
+    const mergedItems = nextItems.map((item) => ({
+      ...item,
+      checked: previousItemsById.get(item.id)?.checked || false
+    }));
+    await setDoc(doc(db, 'planner', 'groceryList'), {
+      generatedAt: serverTimestamp(),
+      items: mergedItems
+    }, { merge: true });
+    setCurrentView('grocery');
+  };
+
+  const shareGroceryList = async () => {
+    const groceryListText = buildGroceryListShareText();
 
     try {
       if (navigator.share) {
@@ -854,10 +951,43 @@ export default function App() {
         return;
       }
 
-      setError('Export is not available on this device.');
+      setError('Sharing is not available on this device.');
     } catch {
-      setError('Unable to export grocery list.');
+      setError('Unable to share grocery list.');
     }
+  };
+
+  const updateGroceryItems = async (items) => {
+    await setDoc(doc(db, 'planner', 'groceryList'), {
+      items
+    }, { merge: true });
+  };
+
+  const toggleGroceryItem = async (itemId) => {
+    await updateGroceryItems((groceryList.items || []).map((item) => (
+      item.id === itemId ? { ...item, checked: !item.checked } : item
+    )));
+  };
+
+  const removeGroceryItem = async (itemId) => {
+    await updateGroceryItems((groceryList.items || []).filter((item) => item.id !== itemId));
+  };
+
+  const addGroceryItem = async () => {
+    const normalizedItem = normalizeGroceryIngredient(newGroceryItem);
+    if (!normalizedItem) return;
+
+    const existing = (groceryList.items || []).find((item) => item.id === normalizedItem.key);
+    if (existing) {
+      setNewGroceryItem('');
+      return;
+    }
+
+    await updateGroceryItems([
+      ...(groceryList.items || []),
+      { id: normalizedItem.key, label: normalizedItem.label, checked: false }
+    ]);
+    setNewGroceryItem('');
   };
 
   const menuContent = (
@@ -1060,6 +1190,76 @@ export default function App() {
     </section>
   );
 
+  const groceryListContent = (
+    <section className={`min-w-0 ${isMobileLayout ? 'space-y-3' : 'space-y-5'} pb-20 pt-2`}>
+      <Section title="Grocery List" icon={CheckSquare} compact={isMobileLayout}>
+        <div className={isMobileLayout ? 'space-y-4' : 'space-y-5'}>
+          <div className={`flex ${isMobileLayout ? 'flex-col items-stretch gap-3' : 'items-start justify-between gap-4'}`}>
+            <div>
+              <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">Planner Export</p>
+              <p className="mt-2 text-[14px] text-[#6B7280]">Generated from dishes allocated in the weekly planner.</p>
+              <p className="mt-2 text-[13px] font-medium text-[#4B5563]">Generated: {formatTimestamp(groceryList.generatedAt)}</p>
+            </div>
+            <div className={`flex ${isMobileLayout ? 'flex-col gap-3' : 'items-center gap-3'}`}>
+              <button onClick={generateWeeklyGroceryList} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
+                Refresh From Planner
+              </button>
+              <button onClick={shareGroceryList} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
+                Share
+              </button>
+            </div>
+          </div>
+
+          <div className={`flex ${isMobileLayout ? 'flex-col gap-3' : 'items-center gap-3'}`}>
+            <input
+              type="text"
+              value={newGroceryItem}
+              onChange={(e) => setNewGroceryItem(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addGroceryItem();
+                }
+              }}
+              placeholder="Add extra grocery item..."
+              className={inputClass}
+            />
+            <button onClick={addGroceryItem} className={`${isMobileLayout ? 'w-full' : ''} ${primaryButtonClass}`}>
+              Add Item
+            </button>
+          </div>
+
+          <div className="grid gap-3">
+            {(groceryList.items || []).map((item) => (
+              <div key={item.id} className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white px-4 py-3 shadow-[0_6px_20px_rgba(0,0,0,0.04)]">
+                <button
+                  onClick={() => toggleGroceryItem(item.id)}
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition ${item.checked ? 'border-[#4B5563] bg-[#4B5563] text-white' : 'border-[#D1D5DB] bg-white text-transparent'}`}
+                  aria-label={`${item.checked ? 'Uncheck' : 'Check'} ${item.label}`}
+                >
+                  <CheckSquare size={12} />
+                </button>
+                <span className={`min-w-0 flex-1 break-words text-[15px] ${item.checked ? 'text-[#9CA3AF] line-through' : 'text-[#111111]'}`}>{item.label}</span>
+                <button
+                  onClick={() => removeGroceryItem(item.id)}
+                  className="shrink-0 rounded-lg p-1.5 text-[#6B7280] transition hover:bg-[rgba(107,114,128,0.08)] hover:text-[#4B5563]"
+                  aria-label={`Remove ${item.label}`}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+            {(groceryList.items || []).length === 0 && (
+              <div className="rounded-2xl border border-dashed border-[#D1D5DB] bg-white px-5 py-8 text-center text-[14px] text-[#6B7280]">
+                No grocery list yet. Generate one from the weekly planner.
+              </div>
+            )}
+          </div>
+        </div>
+      </Section>
+    </section>
+  );
+
   const developerContent = (
     <section className={`min-w-0 ${isMobileLayout ? 'space-y-3' : 'space-y-5'} pb-20 pt-2`}>
       <Section title="Developer" icon={Menu} compact={isMobileLayout}>
@@ -1092,8 +1292,8 @@ export default function App() {
               </p>
             </div>
             <div className={`flex ${isMobileLayout ? 'flex-col gap-3' : 'items-center gap-3'}`}>
-              <button onClick={exportWeeklyGroceryList} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
-                Export Grocery List
+              <button onClick={generateWeeklyGroceryList} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
+                Grocery List
               </button>
               <button onClick={shareWeeklyPlan} className={`${isMobileLayout ? 'w-full' : ''} ${secondaryButtonClass}`}>
                 Share Plan
@@ -1285,6 +1485,7 @@ export default function App() {
               {[
                 { id: 'main', label: 'Main Page', icon: LayoutGrid },
                 { id: 'weekly', label: 'Weekly Planner', icon: Clock },
+                { id: 'grocery', label: 'Grocery List', icon: CheckSquare },
                 { id: 'saved', label: 'Saved Recipes', icon: Star },
                 { id: 'rules', label: 'Dietary Rules', icon: ShieldCheck },
                 { id: 'developer', label: 'Developer', icon: Menu }
@@ -1388,6 +1589,8 @@ export default function App() {
           savedRecipesContent
         ) : currentView === 'weekly' ? (
           weeklyPlannerContent
+        ) : currentView === 'grocery' ? (
+          groceryListContent
         ) : currentView === 'rules' ? (
           rulesContent
         ) : (
