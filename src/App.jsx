@@ -154,7 +154,7 @@ function IngredientBlock({ title, items, options, type, dot, addIngredient, remo
 
 const saveRecipe = async (recipe) => {
   try {
-    await addDoc(
+    const docRef = await addDoc(
       collection(db, 'recipes'),
       {
         ...recipe,
@@ -162,8 +162,10 @@ const saveRecipe = async (recipe) => {
       }
     );
     console.log('Recipe saved!');
+    return docRef.id;
   } catch (e) {
     console.error('Error saving recipe:', e);
+    return null;
   }
 };
 
@@ -389,6 +391,7 @@ export default function App() {
   const [selectedSavedRecipe, setSelectedSavedRecipe] = useState(null);
   const [activeSavedRecipeActions, setActiveSavedRecipeActions] = useState(null);
   const [plannerPickerTarget, setPlannerPickerTarget] = useState(null);
+  const [plannerAssignmentTarget, setPlannerAssignmentTarget] = useState(null);
   const [recipeQuestionTarget, setRecipeQuestionTarget] = useState(null);
   const [recipeQuestion, setRecipeQuestion] = useState('');
   const [recipeAnswer, setRecipeAnswer] = useState('');
@@ -831,6 +834,50 @@ export default function App() {
 
   const openPlannerRecipePicker = (day, slot, dishIndex) => {
     setPlannerPickerTarget({ day, slot, dishIndex });
+  };
+
+  const appendRecipeToPlannerSlot = (day, slot, recipeId) => {
+    setWeeklyPlanner((current) => ({
+      ...current,
+      [day]: {
+        ...current[day],
+        [slot]: [...current[day][slot], recipeId].filter(Boolean)
+      }
+    }));
+  };
+
+  const openPlannerAssignmentModal = (recipe, source) => {
+    setPlannerAssignmentTarget({
+      source,
+      recipe,
+      day: WEEK_DAYS[0],
+      slot: recipe?.mealType && MEAL_TYPES.includes(recipe.mealType.charAt(0).toUpperCase() + recipe.mealType.slice(1))
+        ? recipe.mealType.charAt(0).toUpperCase() + recipe.mealType.slice(1)
+        : mealType
+    });
+  };
+
+  const assignTargetRecipeToPlanner = async () => {
+    if (!plannerAssignmentTarget) return;
+
+    let recipeId = plannerAssignmentTarget.recipe.id || null;
+
+    if (!recipeId) {
+      const existingSavedRecipe = getSavedGeneratedRecipe(plannerAssignmentTarget.recipe);
+      if (existingSavedRecipe) {
+        recipeId = existingSavedRecipe.id;
+      } else {
+        recipeId = await saveRecipe(buildSavedRecipePayload(plannerAssignmentTarget.recipe, mealType));
+      }
+    }
+
+    if (!recipeId) {
+      setError('Unable to add recipe to weekly planner.');
+      return;
+    }
+
+    appendRecipeToPlannerSlot(plannerAssignmentTarget.day, plannerAssignmentTarget.slot, recipeId);
+    setPlannerAssignmentTarget(null);
   };
 
   const getPlannerSlotRecipeIds = (day, slot) => weeklyPlanner[day][slot].filter(Boolean);
@@ -1293,6 +1340,14 @@ export default function App() {
                   <h3 className="break-words text-[17px] font-semibold leading-snug text-[#111111]">{getDisplayRecipeTitle(recipe)}</h3>
                   <p className="mt-1 break-words text-[14px] capitalize text-[#6B7280]">{recipe.mealType}</p>
                 </button>
+                <div className="mt-3 flex justify-end">
+                  <button
+                    onClick={() => openPlannerAssignmentModal(recipe, 'saved')}
+                    className={secondaryButtonClass}
+                  >
+                    Add to Weekly Planner
+                  </button>
+                </div>
               </div>
             ))}
             {filteredSavedRecipes.length === 0 && (
@@ -1676,6 +1731,14 @@ export default function App() {
                             <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Clock size={12} className="mr-2 text-[#4B5563]" />{recipe.prepTime}</div>
                             <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Flame size={12} className="mr-2 text-[#4B5563]" />{recipe.cookTime}</div>
                           </div>
+                          <div className={`${isMobileLayout ? 'mt-3' : 'mt-5'} flex`}>
+                            <button
+                              onClick={() => openPlannerAssignmentModal(recipe, 'generated')}
+                              className={secondaryButtonClass}
+                            >
+                              Add to Weekly Planner
+                            </button>
+                          </div>
                         </div>
                         <div className={isMobileLayout ? 'min-w-0 space-y-5 px-4 py-4' : 'min-w-0 p-8 lg:w-[70%]'}>
                           <div className={`grid min-w-0 ${isMobileLayout ? 'gap-5 grid-cols-1' : 'gap-8 lg:grid-cols-3 lg:gap-8'}`}>
@@ -1765,6 +1828,43 @@ export default function App() {
                   Remove Dish
                 </button>
               ) : null}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {plannerAssignmentTarget && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(17,17,17,0.35)] p-4 sm:items-center" onClick={() => setPlannerAssignmentTarget(null)}>
+          <div className="w-full max-w-md overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.18)]" onClick={(e) => e.stopPropagation()}>
+            <div className="border-b border-[#E5E7EB] px-5 py-4">
+              <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Add To Weekly Planner</p>
+              <h3 className="mt-1 text-[20px] font-semibold text-[#111111]">{getDisplayRecipeTitle(plannerAssignmentTarget.recipe)}</h3>
+            </div>
+            <div className="space-y-4 px-5 py-4">
+              <div className="space-y-2">
+                <label className="text-[12px] font-medium text-[#6B7280]">Day</label>
+                <select
+                  className={selectClass}
+                  value={plannerAssignmentTarget.day}
+                  onChange={(e) => setPlannerAssignmentTarget((current) => ({ ...current, day: e.target.value }))}
+                >
+                  {WEEK_DAYS.map((day) => <option key={day} value={day}>{day}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[12px] font-medium text-[#6B7280]">Meal</label>
+                <select
+                  className={selectClass}
+                  value={plannerAssignmentTarget.slot}
+                  onChange={(e) => setPlannerAssignmentTarget((current) => ({ ...current, slot: e.target.value }))}
+                >
+                  {MEAL_TYPES.map((slot) => <option key={slot} value={slot}>{slot}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E5E7EB] px-5 py-4">
+              <button onClick={() => setPlannerAssignmentTarget(null)} className={secondaryButtonClass}>Cancel</button>
+              <button onClick={assignTargetRecipeToPlanner} className={primaryButtonClass}>Add</button>
             </div>
           </div>
         </div>
