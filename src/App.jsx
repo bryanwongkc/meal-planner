@@ -1919,7 +1919,10 @@ export default function App() {
                           : 'border-[#E5E7EB] bg-white text-[#6B7280]'
                       }`}
                     >
-                      {day}
+                      <span className="flex items-center justify-between gap-3">
+                        <span>{day}</span>
+                        {isSelected ? <span className="text-[15px] font-semibold text-[#16A34A]">✓</span> : null}
+                      </span>
                     </button>
                   );
                 })}
