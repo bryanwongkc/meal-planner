@@ -99,8 +99,17 @@ const deleteSavedRecipe = async (recipeId) => {
   }
 };
 
+const getDisplayRecipeTitle = (recipe) => {
+  if (!recipe) return '';
+
+  if (recipe.name && recipe.chineseName) return `${recipe.name} (${recipe.chineseName})`;
+  if (recipe.name) return recipe.name;
+  if (recipe.title && recipe.chineseName) return `${recipe.title} (${recipe.chineseName})`;
+  return recipe.title || '';
+};
+
 const buildSavedRecipePayload = (recipe, mealType) => ({
-  title: recipe.chineseName ? `${recipe.chineseName} + ${recipe.name}` : recipe.name,
+  title: getDisplayRecipeTitle(recipe),
   mealType: mealType.toLowerCase(),
   isFavorite: false,
   ...recipe
@@ -590,7 +599,7 @@ export default function App() {
         day,
         ...MEAL_TYPES.map((slot) => {
           const recipesForSlot = getPlannerSlotRecipes(day, slot).filter(Boolean);
-          return `${slot}: ${recipesForSlot.length > 0 ? recipesForSlot.map((recipe) => recipe.title).join(' | ') : 'Unassigned'}`;
+          return `${slot}: ${recipesForSlot.length > 0 ? recipesForSlot.map((recipe) => getDisplayRecipeTitle(recipe)).join(' | ') : 'Unassigned'}`;
         })
       ])
     ].join('\n')
@@ -804,7 +813,7 @@ export default function App() {
                   onTouchCancel={clearLongPressTimer}
                   className="min-w-0 w-full text-left"
                 >
-                  <h3 className="break-words text-[17px] font-semibold leading-snug text-[#111111]">{recipe.title}</h3>
+                  <h3 className="break-words text-[17px] font-semibold leading-snug text-[#111111]">{getDisplayRecipeTitle(recipe)}</h3>
                   <p className="mt-1 break-words text-[14px] capitalize text-[#6B7280]">{recipe.mealType}</p>
                 </button>
               </div>
@@ -892,7 +901,7 @@ export default function App() {
                                 className="flex w-full min-w-0 items-start justify-between gap-3 rounded-xl border border-[rgba(107,114,128,0.14)] bg-white px-3 py-3 text-left transition hover:border-[rgba(107,114,128,0.24)] hover:bg-[#FCFCFD]"
                               >
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-[13px] font-semibold leading-snug text-[#111111] break-words [overflow-wrap:anywhere]">{recipe.title}</p>
+                                  <p className="text-[13px] font-semibold leading-snug text-[#111111] break-words [overflow-wrap:anywhere]">{getDisplayRecipeTitle(recipe)}</p>
                                   <div className="mt-1 flex min-w-0 flex-wrap gap-2 text-[11px] text-[#6B7280]">
                                     <span className="min-w-0 max-w-full rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize break-words [overflow-wrap:anywhere]">{recipe.mealType}</span>
                                     {recipe.isFavorite ? <span className="whitespace-nowrap rounded-full bg-[rgba(245,158,11,0.14)] px-2 py-0.5 text-[#B45309]">Favorite</span> : null}
@@ -959,7 +968,7 @@ export default function App() {
                                   className="flex w-full min-w-0 items-start justify-between gap-3 rounded-xl border border-[rgba(107,114,128,0.14)] bg-white px-3 py-3 text-left transition hover:border-[rgba(107,114,128,0.24)] hover:bg-[#FCFCFD]"
                                 >
                                   <div className="min-w-0 flex-1 space-y-1">
-                                    <p className="text-[13px] font-semibold leading-snug text-[#111111] break-words [overflow-wrap:anywhere]">{recipe.title}</p>
+                                    <p className="text-[13px] font-semibold leading-snug text-[#111111] break-words [overflow-wrap:anywhere]">{getDisplayRecipeTitle(recipe)}</p>
                                     <div className="flex min-w-0 flex-wrap gap-2 text-[11px] text-[#6B7280]">
                                       <span className="min-w-0 max-w-full rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize break-words [overflow-wrap:anywhere]">{recipe.mealType}</span>
                                       {recipe.styleTag ? <span className="min-w-0 max-w-full rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 break-words [overflow-wrap:anywhere]">{recipe.styleTag}</span> : null}
@@ -1108,8 +1117,7 @@ export default function App() {
                             <Star size={20} fill={getSavedGeneratedRecipe(recipe)?.isFavorite ? 'currentColor' : 'none'} />
                           </button>
                           <span className="mb-3 block text-[12px] font-medium text-[#4B5563]">{recipe.styleTag}</span>
-                          <h3 className={`${isMobileLayout ? 'text-[20px]' : 'text-[30px]'} font-semibold leading-tight text-[#111111]`}>{recipe.name}</h3>
-                          {recipe.chineseName && <p className={`${isMobileLayout ? 'text-[14px]' : 'text-[16px]'} mt-1.5 text-[#6B7280]`}>{recipe.chineseName}</p>}
+                          <h3 className={`${isMobileLayout ? 'text-[20px]' : 'text-[30px]'} font-semibold leading-tight text-[#111111]`}>{getDisplayRecipeTitle(recipe)}</h3>
                           <p className={`text-[15px] leading-relaxed text-[#6B7280] ${isMobileLayout ? 'mt-3' : 'mt-4'}`}>{recipe.description}</p>
                           <div className={`${isMobileLayout ? 'mt-3' : 'mt-5'} flex flex-wrap gap-2`}>
                             <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Clock size={12} className="mr-2 text-[#4B5563]" />{recipe.prepTime}</div>
@@ -1169,7 +1177,7 @@ export default function App() {
                   className="flex w-full min-w-0 items-start justify-between gap-3 rounded-2xl border border-[#E5E7EB] bg-[#FBFBFC] px-4 py-3 text-left transition hover:border-[rgba(107,114,128,0.24)] hover:bg-white"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-[15px] font-semibold leading-snug text-[#111111] break-words [overflow-wrap:anywhere]">{recipe.title}</p>
+                    <p className="text-[15px] font-semibold leading-snug text-[#111111] break-words [overflow-wrap:anywhere]">{getDisplayRecipeTitle(recipe)}</p>
                     <div className="mt-1 flex min-w-0 flex-wrap gap-2 text-[11px] text-[#6B7280]">
                       <span className="rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 capitalize">{recipe.mealType}</span>
                       {recipe.styleTag ? <span className="min-w-0 max-w-full rounded-full bg-[rgba(107,114,128,0.08)] px-2 py-0.5 break-words [overflow-wrap:anywhere]">{recipe.styleTag}</span> : null}
@@ -1214,7 +1222,7 @@ export default function App() {
               <div>
                 <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">Saved Recipe</p>
                 <h3 className="mt-2 text-[24px] font-semibold tracking-[-0.03em] text-[#111111]">
-                  {selectedSavedRecipe.title || selectedSavedRecipe.name}
+                  {getDisplayRecipeTitle(selectedSavedRecipe)}
                 </h3>
                 <p className="mt-1 text-[14px] capitalize text-[#6B7280]">{selectedSavedRecipe.mealType}</p>
               </div>
@@ -1230,9 +1238,6 @@ export default function App() {
                 <div className="min-w-0">
                   {selectedSavedRecipe.styleTag && (
                     <span className="mb-3 block text-[12px] font-medium text-[#4B5563]">{selectedSavedRecipe.styleTag}</span>
-                  )}
-                  {selectedSavedRecipe.chineseName && (
-                    <p className="mb-3 text-[15px] text-[#6B7280]">{selectedSavedRecipe.chineseName}</p>
                   )}
                   {selectedSavedRecipe.description && (
                     <p className="text-[15px] leading-relaxed text-[#6B7280]">{selectedSavedRecipe.description}</p>
@@ -1339,7 +1344,7 @@ export default function App() {
           <div className="w-full max-w-sm rounded-2xl border border-[#EEEEEE] bg-white p-4 shadow-[0_20px_48px_rgba(0,0,0,0.18)]" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4">
               <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">Saved Recipe</p>
-              <h3 className="mt-2 break-words text-[18px] font-semibold text-[#111111]">{activeSavedRecipeActions.title}</h3>
+              <h3 className="mt-2 break-words text-[18px] font-semibold text-[#111111]">{getDisplayRecipeTitle(activeSavedRecipeActions)}</h3>
               <p className="mt-1 text-[14px] capitalize text-[#6B7280]">{activeSavedRecipeActions.mealType}</p>
             </div>
             <div className="space-y-2">
