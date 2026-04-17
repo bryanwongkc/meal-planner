@@ -7,8 +7,8 @@ import {
 import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase/config';
 
-const PROTEIN_OPTIONS = ['Pork (Pork Belly, Sliced Pork)', 'Chicken (Thighs, Breast, Wings)', 'Beef (Flank, Sirloin, Short Ribs)', 'Tofu (Firm, Soft, Silken)', 'Fish (Whole, Fillets)', 'Shrimp / Prawns', 'Duck', 'Eggs', 'Scallops', 'Lamb', 'CUSTOM_VAL'];
-const FIBER_OPTIONS = ['Bok Choy', 'Gai Lan (Chinese Broccoli)', 'Cabbage (Napa or Green)', 'Eggplant', 'Mushrooms (Shiitake, Enoki, Oyster)', 'Green Beans', 'Snow Peas', 'Bell Peppers', 'Lotus Root', 'Potato', 'Cucumber', 'CUSTOM_VAL'];
+const DEFAULT_PROTEIN_OPTIONS = ['Pork (Pork Belly, Sliced Pork)', 'Chicken (Thighs, Breast, Wings)', 'Beef (Flank, Sirloin, Short Ribs)', 'Tofu (Firm, Soft, Silken)', 'Fish (Whole, Fillets)', 'Shrimp / Prawns', 'Duck', 'Eggs', 'Scallops', 'Lamb'];
+const DEFAULT_FIBER_OPTIONS = ['Bok Choy', 'Gai Lan (Chinese Broccoli)', 'Cabbage (Napa or Green)', 'Eggplant', 'Mushrooms (Shiitake, Enoki, Oyster)', 'Green Beans', 'Snow Peas', 'Bell Peppers', 'Lotus Root', 'Potato', 'Cucumber'];
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner'];
 const SAVED_FILTERS = ['All', ...MEAL_TYPES];
 const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -76,9 +76,9 @@ function IngredientBlock({ title, items, options, type, dot, addIngredient, remo
               <select className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-[#111111] outline-none" value={item.value} onChange={(e) => updateIngredient(type, index, 'value', e.target.value)}>
                 {options.map((option) => <option key={option} value={option}>{option === 'CUSTOM_VAL' ? 'Custom...' : option}</option>)}
               </select>
-              {items.length > 1 && <button onClick={() => removeIngredient(type, index)} className="rounded-lg p-1.5 text-[#6B7280] transition hover:bg-[rgba(107,114,128,0.08)] hover:text-[#4B5563]"><Trash2 size={15} /></button>}
+              <button onClick={() => removeIngredient(type, index)} className="rounded-lg px-2 py-1 text-[16px] font-semibold leading-none text-[#6B7280] transition hover:bg-[rgba(107,114,128,0.08)] hover:text-[#4B5563]" aria-label={`Remove ${title} item`}>-</button>
             </div>
-            {item.value === 'CUSTOM_VAL' && <input type="text" placeholder={type === 'protein' ? 'Protein name...' : 'Veggie name...'} className={`${inputClass} mt-3`} value={item.customText} onChange={(e) => updateIngredient(type, index, 'customText', e.target.value)} />}
+            {item.value === 'CUSTOM_VAL' && <input type="text" placeholder={type === 'protein' ? 'Protein name...' : 'Veggie name...'} className={`${inputClass} mt-3`} value={item.customText} onChange={(e) => updateIngredient(type, index, 'customText', e.target.value)} onBlur={() => updateIngredient(type, index, 'commitCustom', item.customText)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); updateIngredient(type, index, 'commitCustom', item.customText); } }} />}
           </div>
         ))}
       </div>
@@ -194,6 +194,37 @@ const useDietaryRules = () => {
   return rules;
 };
 
+const slugifyOption = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+const useIngredientOptions = (collectionName, defaultOptions) => {
+  const [options, setOptions] = useState(defaultOptions);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, collectionName),
+      orderBy('label', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      if (snapshot.empty) {
+        await Promise.all(
+          defaultOptions.map((label) => setDoc(doc(db, collectionName, slugifyOption(label)), {
+            label,
+            createdAt: serverTimestamp()
+          }))
+        );
+        return;
+      }
+
+      setOptions(snapshot.docs.map((optionDoc) => optionDoc.data().label).filter(Boolean));
+    });
+
+    return () => unsubscribe();
+  }, [collectionName, defaultOptions]);
+
+  return options;
+};
+
 export default function App() {
   const [layoutMode, setLayoutMode] = useState(typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop');
   const [currentView, setCurrentView] = useState('main');
@@ -203,8 +234,10 @@ export default function App() {
   const [isToddlerFriendly, setIsToddlerFriendly] = useState(false);
   const [styleWeight, setStyleWeight] = useState(-100);
   const [flavorHealthBalance, setFlavorHealthBalance] = useState(50);
-  const [proteins, setProteins] = useState([{ value: PROTEIN_OPTIONS[0], customText: '' }]);
-  const [fibers, setFibers] = useState([{ value: FIBER_OPTIONS[0], customText: '' }]);
+  const proteinOptions = useIngredientOptions('proteinOptions', DEFAULT_PROTEIN_OPTIONS);
+  const fiberOptions = useIngredientOptions('fiberOptions', DEFAULT_FIBER_OPTIONS);
+  const [proteins, setProteins] = useState([{ value: DEFAULT_PROTEIN_OPTIONS[0], customText: '' }]);
+  const [fibers, setFibers] = useState([{ value: DEFAULT_FIBER_OPTIONS[0], customText: '' }]);
   const [mealType, setMealType] = useState(MEAL_TYPES[2]);
   const [todayPreference, setTodayPreference] = useState('');
   const [location, setLocation] = useState(LOCATIONS[0].value);
@@ -239,6 +272,8 @@ export default function App() {
   const compactGapClass = isMobileLayout ? 'space-y-3' : 'space-y-5';
   const getSavedGeneratedRecipe = (recipe) => recipes.find((savedRecipe) => savedRecipe.title === getRecipeTitle(recipe, mealType));
   const getRecipeById = (recipeId) => recipes.find((recipe) => recipe.id === recipeId);
+  const proteinDropdownOptions = [...proteinOptions, 'CUSTOM_VAL'];
+  const fiberDropdownOptions = [...fiberOptions, 'CUSTOM_VAL'];
   const filteredSavedRecipes = recipes.filter((recipe) => {
     const matchesMealType = savedMealFilter === 'All' || recipe.mealType?.toLowerCase() === savedMealFilter.toLowerCase();
     const matchesSearch = !savedSearch.trim()
@@ -345,20 +380,45 @@ export default function App() {
     if (editingRuleId === id) cancelEditingRule();
   };
   const addIngredient = (type) => {
-    const entry = { value: type === 'protein' ? PROTEIN_OPTIONS[0] : FIBER_OPTIONS[0], customText: '' };
+    const entry = { value: type === 'protein' ? (proteinOptions[0] || DEFAULT_PROTEIN_OPTIONS[0]) : (fiberOptions[0] || DEFAULT_FIBER_OPTIONS[0]), customText: '' };
     if (type === 'protein' && proteins.length < 4) setProteins([...proteins, entry]);
     if (type === 'fiber' && fibers.length < 4) setFibers([...fibers, entry]);
   };
   const removeIngredient = (type, index) => {
-    if (type === 'protein' && proteins.length > 1) setProteins(proteins.filter((_, i) => i !== index));
-    if (type === 'fiber' && fibers.length > 1) setFibers(fibers.filter((_, i) => i !== index));
+    if (type === 'protein') setProteins(proteins.filter((_, i) => i !== index));
+    if (type === 'fiber') setFibers(fibers.filter((_, i) => i !== index));
   };
-  const updateIngredient = (type, index, field, value) => {
+  const saveIngredientOption = async (type, label) => {
+    const trimmedLabel = label.trim();
+    if (!trimmedLabel) return null;
+
+    const existingOptions = type === 'protein' ? proteinOptions : fiberOptions;
+    const matchedOption = existingOptions.find((option) => option.toLowerCase() === trimmedLabel.toLowerCase());
+    if (matchedOption) return matchedOption;
+
+    const collectionName = type === 'protein' ? 'proteinOptions' : 'fiberOptions';
+    await setDoc(doc(db, collectionName, slugifyOption(trimmedLabel)), {
+      label: trimmedLabel,
+      createdAt: serverTimestamp()
+    }, { merge: true });
+
+    return trimmedLabel;
+  };
+  const updateIngredient = async (type, index, field, value) => {
     const target = type === 'protein' ? proteins : fibers;
     const setter = type === 'protein' ? setProteins : setFibers;
-    const next = [...target];
-    next[index][field] = value;
-    setter(next);
+    if (field === 'commitCustom') {
+      const savedOption = await saveIngredientOption(type, value);
+      if (!savedOption) return;
+      setter(target.map((item, itemIndex) => (itemIndex === index ? { value: savedOption, customText: '' } : item)));
+      return;
+    }
+
+    setter(target.map((item, itemIndex) => {
+      if (itemIndex !== index) return item;
+      if (field === 'value' && value === 'CUSTOM_VAL') return { value, customText: '' };
+      return { ...item, [field]: value };
+    }));
   };
 
   const getStyleLabel = (value) => {
@@ -745,8 +805,8 @@ export default function App() {
         </div>
       </section>
       <div className={`grid ${isMobileLayout ? 'gap-3 grid-cols-1' : 'gap-5 grid-cols-2'}`}>
-        <IngredientBlock title="Proteins" items={proteins} options={PROTEIN_OPTIONS} type="protein" dot="bg-[#6B7280]" addIngredient={addIngredient} removeIngredient={removeIngredient} updateIngredient={updateIngredient} compact={isMobileLayout} />
-        <IngredientBlock title="Veggies" items={fibers} options={FIBER_OPTIONS} type="fiber" dot="bg-[#6B7280]" addIngredient={addIngredient} removeIngredient={removeIngredient} updateIngredient={updateIngredient} compact={isMobileLayout} />
+        <IngredientBlock title="Proteins" items={proteins} options={proteinDropdownOptions} type="protein" dot="bg-[#6B7280]" addIngredient={addIngredient} removeIngredient={removeIngredient} updateIngredient={updateIngredient} compact={isMobileLayout} />
+        <IngredientBlock title="Veggies" items={fibers} options={fiberDropdownOptions} type="fiber" dot="bg-[#6B7280]" addIngredient={addIngredient} removeIngredient={removeIngredient} updateIngredient={updateIngredient} compact={isMobileLayout} />
       </div>
       <section className={sectionCardClass}>
         <div className={`${isMobileLayout ? 'mb-4' : 'mb-6'} flex items-center gap-3`}>
