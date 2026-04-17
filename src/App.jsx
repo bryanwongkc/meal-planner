@@ -21,10 +21,10 @@ const DEFAULT_DIETARY_RULES = [
 ];
 
 const card = 'min-w-0 rounded-[12px] border border-[#E5E7EB] bg-white p-6 shadow-[0_4px_16px_rgba(17,17,17,0.05)] transition duration-200 ease-out hover:shadow-[0_10px_28px_rgba(17,17,17,0.08)]';
-const inputClass = 'w-full rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-3 text-[15px] font-medium text-[#111111] outline-none transition duration-200 ease-out focus:border-[#2F6BFF] focus:ring-2 focus:ring-[rgba(47,107,255,0.12)] placeholder:text-[#9CA3AF]';
-const selectClass = 'min-w-0 w-full max-w-full rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-3 text-[15px] font-medium text-[#111111] outline-none transition duration-200 ease-out focus:border-[#2F6BFF] focus:ring-2 focus:ring-[rgba(47,107,255,0.12)]';
-const primaryButtonClass = 'rounded-[10px] bg-[#2F6BFF] px-5 py-3 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(47,107,255,0.22)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#255AE0] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#D1D5DB] disabled:shadow-none';
-const secondaryButtonClass = 'rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-2.5 text-[12px] font-semibold text-[#6B7280] transition duration-200 ease-out hover:-translate-y-[1px] hover:border-[rgba(47,107,255,0.22)] hover:bg-[rgba(47,107,255,0.05)] hover:text-[#111111] active:scale-[0.98]';
+const inputClass = 'w-full rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-3 text-[15px] font-medium text-[#111111] outline-none transition duration-200 ease-out focus:border-[#111111] focus:ring-2 focus:ring-[rgba(17,17,17,0.10)] placeholder:text-[#9CA3AF]';
+const selectClass = 'min-w-0 w-full max-w-full rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-3 text-[15px] font-medium text-[#111111] outline-none transition duration-200 ease-out focus:border-[#111111] focus:ring-2 focus:ring-[rgba(17,17,17,0.10)]';
+const primaryButtonClass = 'rounded-[10px] bg-[#111111] px-5 py-3 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(17,17,17,0.18)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#1F2937] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#D1D5DB] disabled:shadow-none';
+const secondaryButtonClass = 'rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-2.5 text-[12px] font-semibold text-[#6B7280] transition duration-200 ease-out hover:-translate-y-[1px] hover:border-[rgba(17,17,17,0.10)] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111] active:scale-[0.98]';
 const createEmptyWeeklyPlanner = () => (
   WEEK_DAYS.reduce((acc, day) => ({
     ...acc,
@@ -51,7 +51,7 @@ function Section({ title, icon, children, compact = false }) {
   return (
     <section className={compact ? 'min-w-0 rounded-[12px] border border-[#E5E7EB] bg-white p-4 shadow-[0_4px_16px_rgba(17,17,17,0.05)] transition duration-200 ease-out hover:shadow-[0_10px_28px_rgba(17,17,17,0.08)]' : card}>
       <div className={`${compact ? 'mb-4' : 'mb-6'} flex items-center gap-3`}>
-        <div className={`${compact ? 'rounded-[8px] p-2' : 'rounded-[10px] p-2.5'} bg-[rgba(47,107,255,0.08)] text-[#2F6BFF]`}>{React.createElement(icon, { size: compact ? 14 : 16 })}</div>
+        <div className={`${compact ? 'rounded-[8px] p-2' : 'rounded-[10px] p-2.5'} bg-[rgba(17,17,17,0.05)] text-[#111111]`}>{React.createElement(icon, { size: compact ? 14 : 16 })}</div>
         <div className="min-w-0">
           <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#9CA3AF]">Section</p>
           <h3 className={`${compact ? 'text-[18px]' : 'text-[20px]'} font-semibold tracking-[-0.02em] text-[#111111]`}>{title}</h3>
@@ -96,7 +96,7 @@ function IngredientOptionPicker({ item, options, type, index, updateIngredient, 
         <div className="absolute left-0 top-[calc(100%+0.5rem)] z-20 w-full min-w-0 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_16px_32px_rgba(0,0,0,0.12)]">
           <div className="max-h-60 overflow-y-auto p-2">
             {options.map((option) => (
-              <div key={option} className="flex items-center gap-2 rounded-lg px-2 py-2 transition duration-200 ease-out hover:bg-[rgba(47,107,255,0.06)]">
+              <div key={option} className="flex items-center gap-2 rounded-lg px-2 py-2 transition duration-200 ease-out hover:bg-[rgba(17,17,17,0.04)]">
                 <button
                   type="button"
                   onClick={() => {
@@ -114,7 +114,7 @@ function IngredientOptionPicker({ item, options, type, index, updateIngredient, 
                       event.stopPropagation();
                       deleteIngredientOption(type, option);
                     }}
-                    className="shrink-0 rounded-[8px] px-2 py-1 text-[14px] font-semibold leading-none text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(47,107,255,0.08)] hover:text-[#111111]"
+                    className="shrink-0 rounded-[8px] px-2 py-1 text-[14px] font-semibold leading-none text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(17,17,17,0.06)] hover:text-[#111111]"
                     aria-label={`Delete ${option} from ${type} options`}
                   >
                     -
@@ -137,7 +137,7 @@ function IngredientBlock({ title, items, options, type, dot, addIngredient, remo
           <div className={`h-2 w-2 rounded-full ${dot}`} />
           <span>{items.length} selected</span>
         </div>
-        <button onClick={() => addIngredient(type)} className={`flex ${compact ? 'h-8 w-8' : 'h-9 w-9'} items-center justify-center rounded-full bg-[#2F6BFF] text-white shadow-[0_8px_20px_rgba(47,107,255,0.18)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#255AE0] active:scale-[0.98]`} disabled={items.length >= 4}><Plus size={compact ? 13 : 14} /></button>
+        <button onClick={() => addIngredient(type)} className={`flex ${compact ? 'h-8 w-8' : 'h-9 w-9'} items-center justify-center rounded-full bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#1F2937] active:scale-[0.98]`} disabled={items.length >= 4}><Plus size={compact ? 13 : 14} /></button>
       </div>
       <div className={compact ? 'space-y-2.5' : 'space-y-3'}>
         {items.map((item, index) => (
@@ -145,7 +145,7 @@ function IngredientBlock({ title, items, options, type, dot, addIngredient, remo
             <div className="flex items-center gap-2">
               <div className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
               <IngredientOptionPicker item={item} options={options} type={type} index={index} updateIngredient={updateIngredient} deleteIngredientOption={deleteIngredientOption} />
-              <button onClick={() => removeIngredient(type, index)} className="rounded-[8px] p-1.5 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(47,107,255,0.06)] hover:text-[#111111]" aria-label={`Remove selected ${title} item`}><Trash2 size={15} /></button>
+              <button onClick={() => removeIngredient(type, index)} className="rounded-[8px] p-1.5 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]" aria-label={`Remove selected ${title} item`}><Trash2 size={15} /></button>
             </div>
             {item.value === 'CUSTOM_VAL' && <input type="text" placeholder={type === 'protein' ? 'Protein name...' : 'Veggie name...'} className={`${inputClass} mt-3`} value={item.customText} onChange={(e) => updateIngredient(type, index, 'customText', e.target.value)} onBlur={() => updateIngredient(type, index, 'commitCustom', item.customText)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); updateIngredient(type, index, 'commitCustom', item.customText); } }} />}
           </div>
@@ -428,7 +428,7 @@ export default function App() {
   const lastSyncedWeeklyPlannerRef = useRef(JSON.stringify(createEmptyWeeklyPlanner()));
 
   const isMobileLayout = layoutMode === 'mobile';
-  const trackClass = 'w-full cursor-pointer accent-[#2F6BFF]';
+  const trackClass = 'w-full cursor-pointer accent-[#111111]';
   const sectionCardClass = isMobileLayout ? 'min-w-0 rounded-[12px] border border-[#E5E7EB] bg-white p-4 shadow-[0_4px_16px_rgba(17,17,17,0.05)] transition duration-200 ease-out hover:shadow-[0_10px_28px_rgba(17,17,17,0.08)]' : card;
   const compactGapClass = isMobileLayout ? 'space-y-3' : 'space-y-5';
   const getSavedGeneratedRecipe = (recipe) => recipes.find((savedRecipe) => savedRecipe.title === getRecipeTitle(recipe, mealType));
@@ -1345,7 +1345,7 @@ export default function App() {
     <div className={`min-w-0 ${compactGapClass}`}>
       <section className={sectionCardClass}>
         <div className={`${isMobileLayout ? 'mb-4' : 'mb-6'} flex items-center gap-3`}>
-          <div className={`${isMobileLayout ? 'rounded-[8px] p-2' : 'rounded-[10px] p-2.5'} bg-[rgba(47,107,255,0.08)] text-[#2F6BFF]`}><LayoutGrid size={isMobileLayout ? 14 : 16} /></div>
+          <div className={`${isMobileLayout ? 'rounded-[8px] p-2' : 'rounded-[10px] p-2.5'} bg-[rgba(17,17,17,0.05)] text-[#111111]`}><LayoutGrid size={isMobileLayout ? 14 : 16} /></div>
           <div>
             <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#9CA3AF]">Meal Profile</p>
             <h3 className={`${isMobileLayout ? 'text-[18px]' : 'text-[20px]'} font-semibold tracking-[-0.02em] text-[#111111]`}>Set the structure of the meal</h3>
@@ -1354,7 +1354,7 @@ export default function App() {
         <div className={`grid ${isMobileLayout ? 'gap-4 grid-cols-1' : 'gap-6 grid-cols-3'}`}>
           <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4"><div className="flex items-center justify-between"><label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Dishes</label><span className="text-[24px] font-semibold text-[#111111]">{dishCount}</span></div><input type="range" min="1" max="6" step="1" value={dishCount} onChange={(e) => setDishCount(parseInt(e.target.value, 10))} className={trackClass} /><div className="flex justify-between text-[12px] text-[#6B7280]"><span>Light spread</span><span>Full table</span></div></div>
           <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4"><div className="flex items-center justify-between"><label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Diners</label><span className="text-[24px] font-semibold text-[#111111]">{dinerCount}</span></div><input type="range" min="2" max="8" step="1" value={dinerCount} onChange={(e) => setDinerCount(parseInt(e.target.value, 10))} className={trackClass} /><div className="flex justify-between text-[12px] text-[#6B7280]"><span>Smaller meal</span><span>Group dinner</span></div></div>
-          <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4"><div className="flex items-center justify-between gap-4"><label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Flavor Weight</label><span className="rounded-full bg-[rgba(47,107,255,0.08)] px-3 py-1 text-[12px] font-medium text-[#2F6BFF]">{getStyleLabel(styleWeight)}</span></div><input type="range" min="-100" max="100" step="20" value={styleWeight} onChange={(e) => setStyleWeight(parseInt(e.target.value, 10))} className="w-full cursor-pointer accent-[#2F6BFF]" /><div className="flex justify-between text-[12px] text-[#6B7280]"><span>Classic</span><span>Global</span><span>Bold</span></div></div>
+          <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4"><div className="flex items-center justify-between gap-4"><label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Flavor Weight</label><span className="rounded-full bg-[rgba(17,17,17,0.05)] px-3 py-1 text-[12px] font-medium text-[#111111]">{getStyleLabel(styleWeight)}</span></div><input type="range" min="-100" max="100" step="20" value={styleWeight} onChange={(e) => setStyleWeight(parseInt(e.target.value, 10))} className="w-full cursor-pointer accent-[#111111]" /><div className="flex justify-between text-[12px] text-[#6B7280]"><span>Classic</span><span>Global</span><span>Bold</span></div></div>
         </div>
       </section>
       <div className={`grid ${isMobileLayout ? 'gap-3 grid-cols-1' : 'gap-5 grid-cols-2'}`}>
@@ -1363,7 +1363,7 @@ export default function App() {
       </div>
       <section className={sectionCardClass}>
         <div className={`${isMobileLayout ? 'mb-4' : 'mb-6'} flex items-center gap-3`}>
-          <div className={`${isMobileLayout ? 'rounded-[8px] p-2' : 'rounded-[10px] p-2.5'} bg-[rgba(47,107,255,0.08)] text-[#2F6BFF]`}><Settings2 size={isMobileLayout ? 14 : 16} /></div>
+          <div className={`${isMobileLayout ? 'rounded-[8px] p-2' : 'rounded-[10px] p-2.5'} bg-[rgba(17,17,17,0.05)] text-[#111111]`}><Settings2 size={isMobileLayout ? 14 : 16} /></div>
           <div>
             <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#9CA3AF]">Kitchen Settings</p>
             <h3 className={`${isMobileLayout ? 'text-[18px]' : 'text-[20px]'} font-semibold tracking-[-0.02em] text-[#111111]`}>Tune the output intelligently</h3>
@@ -1378,7 +1378,7 @@ export default function App() {
                   key={type}
                   onClick={() => setMealType(type)}
                   className={`flex-1 rounded-lg px-4 py-2.5 text-[13px] font-medium transition duration-200 ease-out ${
-                    mealType === type ? 'bg-[#2F6BFF] text-white shadow-[0_8px_20px_rgba(47,107,255,0.18)]' : 'text-[#6B7280] hover:bg-[rgba(47,107,255,0.05)] hover:text-[#111111]'
+                    mealType === type ? 'bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)]' : 'text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'
                   }`}
                 >
                   {type}
@@ -1389,7 +1389,7 @@ export default function App() {
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-4">
               <label className="text-[12px] font-medium text-[#6B7280]">Flavor vs Health</label>
-              <span className="rounded-full bg-[rgba(47,107,255,0.08)] px-3 py-1 text-[12px] font-medium text-[#2F6BFF]">{getFlavorHealthLabel(flavorHealthBalance)}</span>
+              <span className="rounded-full bg-[rgba(17,17,17,0.05)] px-3 py-1 text-[12px] font-medium text-[#111111]">{getFlavorHealthLabel(flavorHealthBalance)}</span>
             </div>
             <input
               type="range"
@@ -1398,7 +1398,7 @@ export default function App() {
               step="10"
               value={flavorHealthBalance}
               onChange={(e) => setFlavorHealthBalance(parseInt(e.target.value, 10))}
-              className="w-full cursor-pointer accent-[#2F6BFF]"
+              className="w-full cursor-pointer accent-[#111111]"
             />
             <div className="flex items-center justify-between text-[12px] text-[#6B7280]">
               <span>Healthier / lighter</span>
@@ -1409,8 +1409,8 @@ export default function App() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div><p className="text-[15px] font-medium text-[#111111]">Service Mode</p><p className="text-[13px] text-[#6B7280]">Switch toddler-safe guidance on or off.</p></div>
             <div className="flex items-center rounded-[10px] border border-[#E5E7EB] bg-[#F7F8FA] p-1">
-              <button onClick={() => setIsToddlerFriendly(false)} className={`rounded-lg px-4 py-2.5 text-[13px] font-medium transition duration-200 ease-out ${!isToddlerFriendly ? 'bg-[#2F6BFF] text-white shadow-[0_8px_20px_rgba(47,107,255,0.18)]' : 'text-[#6B7280] hover:bg-[rgba(47,107,255,0.05)] hover:text-[#111111]'}`}>Adults Only</button>
-              <button onClick={() => setIsToddlerFriendly(true)} className={`flex items-center rounded-lg px-4 py-2.5 text-[13px] font-medium transition duration-200 ease-out ${isToddlerFriendly ? 'bg-[#2F6BFF] text-white shadow-[0_8px_20px_rgba(47,107,255,0.18)]' : 'text-[#6B7280] hover:bg-[rgba(47,107,255,0.05)] hover:text-[#111111]'}`}><Baby size={12} className="mr-1.5" />Toddler</button>
+              <button onClick={() => setIsToddlerFriendly(false)} className={`rounded-lg px-4 py-2.5 text-[13px] font-medium transition duration-200 ease-out ${!isToddlerFriendly ? 'bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)]' : 'text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'}`}>Adults Only</button>
+              <button onClick={() => setIsToddlerFriendly(true)} className={`flex items-center rounded-lg px-4 py-2.5 text-[13px] font-medium transition duration-200 ease-out ${isToddlerFriendly ? 'bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)]' : 'text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'}`}><Baby size={12} className="mr-1.5" />Toddler</button>
             </div>
           </div>
           <div className={`grid gap-4 ${isMobileLayout ? 'grid-cols-1' : 'grid-cols-2'}`}>
@@ -1450,12 +1450,12 @@ export default function App() {
             {dietaryRules.map((rule) => (
               <div key={rule.id} className={`flex items-center justify-between gap-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] ${isMobileLayout ? 'px-3 py-3' : 'px-4 py-4'}`}>
                 <div className="flex items-center gap-3">
-                  <div className="h-2 w-2 rounded-full bg-[#2F6BFF]" />
+                  <div className="h-2 w-2 rounded-full bg-[#111111]" />
                   <span className="text-[15px] font-medium text-[#111111]">{rule.text}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => startEditingRule(rule)} className={secondaryButtonClass}>Edit</button>
-                  <button onClick={() => removeCustomRule(rule.id)} className="rounded-[8px] p-1.5 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(47,107,255,0.06)] hover:text-[#111111]"><XCircle size={16} /></button>
+                  <button onClick={() => removeCustomRule(rule.id)} className="rounded-[8px] p-1.5 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]"><XCircle size={16} /></button>
                 </div>
               </div>
             ))}
@@ -1489,7 +1489,7 @@ export default function App() {
                   onClick={() => setSavedMealFilter(filter)}
                   className={`rounded-full border px-4 py-2 text-[13px] font-medium transition duration-200 ease-out ${
                     savedMealFilter === filter
-                      ? 'border-[#2F6BFF] bg-[#2F6BFF] text-white'
+                      ? 'border-[#111111] bg-[#111111] text-white'
                       : 'border-[#E5E7EB] bg-white text-[#6B7280]'
                   }`}
                 >
@@ -1508,7 +1508,7 @@ export default function App() {
               onClick={() => setShowFavoritesOnly((value) => !value)}
               className={`rounded-full border px-4 py-2 text-[13px] font-medium transition duration-200 ease-out ${
                 showFavoritesOnly
-                  ? 'border-[#2F6BFF] bg-[#2F6BFF] text-white'
+                  ? 'border-[#111111] bg-[#111111] text-white'
                   : 'border-[#E5E7EB] bg-white text-[#6B7280]'
               }`}
             >
@@ -1610,7 +1610,7 @@ export default function App() {
               <div key={item.id} className="flex min-w-0 items-center gap-3 rounded-[12px] border border-[#E5E7EB] bg-white px-4 py-3 shadow-[0_4px_16px_rgba(17,17,17,0.05)] transition duration-200 ease-out hover:shadow-[0_10px_28px_rgba(17,17,17,0.08)]">
                 <button
                   onClick={() => toggleGroceryItem(item.id)}
-                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[8px] border transition ${item.checked ? 'border-[#2F6BFF] bg-[#2F6BFF] text-white' : 'border-[#D1D5DB] bg-white text-transparent'}`}
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[8px] border transition ${item.checked ? 'border-[#111111] bg-[#111111] text-white' : 'border-[#D1D5DB] bg-white text-transparent'}`}
                   aria-label={`${item.checked ? 'Uncheck' : 'Check'} ${item.label}`}
                 >
                   <CheckSquare size={12} />
@@ -1618,7 +1618,7 @@ export default function App() {
                 <span className={`min-w-0 flex-1 break-words text-[15px] ${item.checked ? 'text-[#9CA3AF] line-through' : 'text-[#111111]'}`}>{item.label}</span>
                 <button
                   onClick={() => removeGroceryItem(item.id)}
-                  className="shrink-0 rounded-[8px] p-1.5 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(47,107,255,0.06)] hover:text-[#111111]"
+                  className="shrink-0 rounded-[8px] p-1.5 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]"
                   aria-label={`Remove ${item.label}`}
                 >
                   <Trash2 size={16} />
@@ -1692,16 +1692,16 @@ export default function App() {
                       const assignedRecipes = getPlannerSlotRecipes(day, slot).filter(Boolean);
 
                       return (
-                        <div key={`${day}-${slot}`} className={`min-w-0 overflow-hidden rounded-[12px] border p-3 transition duration-200 ease-out ${assignedRecipes.length > 0 ? 'border-[rgba(47,107,255,0.16)] bg-[rgba(47,107,255,0.04)] shadow-[0_8px_20px_rgba(17,17,17,0.05)]' : 'border-[#E5E7EB] bg-[#F7F8FA]'}`}>
+                        <div key={`${day}-${slot}`} className={`min-w-0 overflow-hidden rounded-[12px] border p-3 transition duration-200 ease-out ${assignedRecipes.length > 0 ? 'border-[rgba(17,17,17,0.10)] bg-[rgba(17,17,17,0.03)] shadow-[0_8px_20px_rgba(17,17,17,0.05)]' : 'border-[#E5E7EB] bg-[#F7F8FA]'}`}>
                           <div className="flex min-w-0 items-start justify-between gap-2">
                             <label className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">{slot}</label>
                             <div className="flex shrink-0 items-center gap-2">
-                              <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-medium ${assignedRecipes.length > 0 ? 'bg-[#2F6BFF] text-white' : 'border border-[#E5E7EB] bg-white text-[#6B7280]'}`}>
+                              <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-medium ${assignedRecipes.length > 0 ? 'bg-[#111111] text-white' : 'border border-[#E5E7EB] bg-white text-[#6B7280]'}`}>
                                 {assignedRecipes.length > 0 ? `${assignedRecipes.length} dish${assignedRecipes.length > 1 ? 'es' : ''}` : 'Open'}
                               </span>
                               <button
                                 onClick={() => addDishToPlannerSlot(day, slot)}
-                                className="flex shrink-0 items-center justify-center whitespace-nowrap rounded-[8px] bg-[#2F6BFF] px-2.5 py-1 text-[11px] font-semibold text-white shadow-[0_8px_20px_rgba(47,107,255,0.18)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#255AE0]"
+                                className="flex shrink-0 items-center justify-center whitespace-nowrap rounded-[8px] bg-[#111111] px-2.5 py-1 text-[11px] font-semibold text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#1F2937]"
                                 aria-label={`Add dish to ${day} ${slot}`}
                               >
                                 + Dish
@@ -1713,13 +1713,13 @@ export default function App() {
                               <button
                                 key={`${day}-${slot}-${dishIndex}`}
                                 onClick={() => openPlannerRecipePicker(day, slot, dishIndex)}
-                                className="flex w-full min-w-0 items-start justify-between gap-3 rounded-[12px] border border-[#E5E7EB] bg-white px-3 py-3 text-left transition duration-200 ease-out hover:-translate-y-[1px] hover:border-[rgba(47,107,255,0.18)] hover:shadow-[0_8px_20px_rgba(17,17,17,0.06)]"
+                                className="flex w-full min-w-0 items-start justify-between gap-3 rounded-[12px] border border-[#E5E7EB] bg-white px-3 py-3 text-left transition duration-200 ease-out hover:-translate-y-[1px] hover:border-[rgba(17,17,17,0.10)] hover:shadow-[0_8px_20px_rgba(17,17,17,0.06)]"
                               >
                                 <div className="min-w-0 flex-1">
                                   <p className="text-[13px] font-semibold leading-snug text-[#111111] break-words [overflow-wrap:anywhere]">{getDisplayRecipeTitle(recipe)}</p>
                                   <div className="mt-1 flex min-w-0 flex-wrap gap-2 text-[11px] text-[#6B7280]">
                                     <span className="min-w-0 max-w-full rounded-full bg-[#F7F8FA] px-2 py-0.5 capitalize break-words [overflow-wrap:anywhere]">{recipe.mealType}</span>
-                                    {recipe.isFavorite ? <span className="whitespace-nowrap rounded-full bg-[rgba(47,107,255,0.08)] px-2 py-0.5 text-[#2F6BFF]">Favorite</span> : null}
+                                    {recipe.isFavorite ? <span className="whitespace-nowrap rounded-full bg-[rgba(17,17,17,0.06)] px-2 py-0.5 text-[#111111]">Favorite</span> : null}
                                   </div>
                                 </div>
                                 <span className="shrink-0 text-[11px] font-medium text-[#6B7280]">Edit</span>
@@ -1727,9 +1727,9 @@ export default function App() {
                             )) : (
                               <button
                                 onClick={() => addDishToPlannerSlot(day, slot)}
-                                className="flex min-h-[96px] w-full items-center justify-center rounded-[12px] border border-dashed border-[#D1D5DB] bg-[#F7F8FA] px-4 py-5 text-center transition duration-200 ease-out hover:-translate-y-[1px] hover:border-[rgba(47,107,255,0.24)] hover:bg-[rgba(47,107,255,0.04)]"
+                                className="flex min-h-[96px] w-full items-center justify-center rounded-[12px] border border-dashed border-[#D1D5DB] bg-[#F7F8FA] px-4 py-5 text-center transition duration-200 ease-out hover:-translate-y-[1px] hover:border-[rgba(17,17,17,0.10)] hover:bg-[rgba(17,17,17,0.03)]"
                               >
-                                <span className="text-[36px] font-light leading-none text-[#2F6BFF]">+</span>
+                                <span className="text-[36px] font-light leading-none text-[#111111]">+</span>
                               </button>
                             )}
                           </div>
@@ -1762,14 +1762,14 @@ export default function App() {
                       const assignedRecipes = getPlannerSlotRecipes(day, slot).filter(Boolean);
                       return (
                         <div key={`${day}-${slot}`} className="min-w-0 overflow-hidden border-r border-[#E5E7EB] p-4 last:border-r-0">
-                          <div className={`flex h-full min-w-0 flex-col overflow-hidden rounded-[12px] border p-3 transition duration-200 ease-out ${assignedRecipes.length > 0 ? 'border-[rgba(47,107,255,0.16)] bg-[rgba(47,107,255,0.04)] shadow-[0_8px_20px_rgba(17,17,17,0.05)]' : 'border-[#E5E7EB] bg-[#FBFBFC]'}`}>
+                          <div className={`flex h-full min-w-0 flex-col overflow-hidden rounded-[12px] border p-3 transition duration-200 ease-out ${assignedRecipes.length > 0 ? 'border-[rgba(17,17,17,0.10)] bg-[rgba(17,17,17,0.03)] shadow-[0_8px_20px_rgba(17,17,17,0.05)]' : 'border-[#E5E7EB] bg-[#FBFBFC]'}`}>
                             <div className="mb-3 flex min-w-0 items-start justify-between gap-2">
-                              <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-medium ${assignedRecipes.length > 0 ? 'bg-[#2F6BFF] text-white' : 'border border-[#E5E7EB] bg-white text-[#6B7280]'}`}>
+                              <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-medium ${assignedRecipes.length > 0 ? 'bg-[#111111] text-white' : 'border border-[#E5E7EB] bg-white text-[#6B7280]'}`}>
                                 {assignedRecipes.length > 0 ? `${assignedRecipes.length} dish${assignedRecipes.length > 1 ? 'es' : ''}` : 'Open'}
                               </span>
                               <button
                                 onClick={() => addDishToPlannerSlot(day, slot)}
-                                className="flex shrink-0 items-center justify-center whitespace-nowrap rounded-[8px] bg-[#2F6BFF] px-2.5 py-1 text-[11px] font-semibold text-white shadow-[0_8px_20px_rgba(47,107,255,0.18)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#255AE0]"
+                                className="flex shrink-0 items-center justify-center whitespace-nowrap rounded-[8px] bg-[#111111] px-2.5 py-1 text-[11px] font-semibold text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#1F2937]"
                                 aria-label={`Add dish to ${day} ${slot}`}
                               >
                                 + Dish
@@ -1780,14 +1780,14 @@ export default function App() {
                                 <button
                                   key={`${day}-${slot}-${dishIndex}`}
                                   onClick={() => openPlannerRecipePicker(day, slot, dishIndex)}
-                                  className="flex w-full min-w-0 items-start justify-between gap-3 rounded-[12px] border border-[#E5E7EB] bg-white px-3 py-3 text-left transition duration-200 ease-out hover:-translate-y-[1px] hover:border-[rgba(47,107,255,0.18)] hover:shadow-[0_8px_20px_rgba(17,17,17,0.06)]"
+                                  className="flex w-full min-w-0 items-start justify-between gap-3 rounded-[12px] border border-[#E5E7EB] bg-white px-3 py-3 text-left transition duration-200 ease-out hover:-translate-y-[1px] hover:border-[rgba(17,17,17,0.10)] hover:shadow-[0_8px_20px_rgba(17,17,17,0.06)]"
                                 >
                                   <div className="min-w-0 flex-1 space-y-1">
                                     <p className="text-[13px] font-semibold leading-snug text-[#111111] break-words [overflow-wrap:anywhere]">{getDisplayRecipeTitle(recipe)}</p>
                                     <div className="flex min-w-0 flex-wrap gap-2 text-[11px] text-[#6B7280]">
                                       <span className="min-w-0 max-w-full rounded-full bg-[#F7F8FA] px-2 py-0.5 capitalize break-words [overflow-wrap:anywhere]">{recipe.mealType}</span>
                                       {recipe.styleTag ? <span className="min-w-0 max-w-full rounded-full bg-[#F7F8FA] px-2 py-0.5 break-words [overflow-wrap:anywhere]">{recipe.styleTag}</span> : null}
-                                      {recipe.isFavorite ? <span className="whitespace-nowrap rounded-full bg-[rgba(47,107,255,0.08)] px-2 py-0.5 text-[#2F6BFF]">Favorite</span> : null}
+                                      {recipe.isFavorite ? <span className="whitespace-nowrap rounded-full bg-[rgba(17,17,17,0.06)] px-2 py-0.5 text-[#111111]">Favorite</span> : null}
                                     </div>
                                   </div>
                                   <span className="shrink-0 text-[11px] font-medium text-[#6B7280]">Edit</span>
@@ -1795,9 +1795,9 @@ export default function App() {
                               )) : (
                                 <button
                                   onClick={() => addDishToPlannerSlot(day, slot)}
-                                  className="flex min-h-[112px] w-full items-center justify-center rounded-[12px] border border-dashed border-[#D1D5DB] bg-[#F7F8FA] px-4 py-5 text-center transition duration-200 ease-out hover:-translate-y-[1px] hover:border-[rgba(47,107,255,0.24)] hover:bg-[rgba(47,107,255,0.04)]"
+                                  className="flex min-h-[112px] w-full items-center justify-center rounded-[12px] border border-dashed border-[#D1D5DB] bg-[#F7F8FA] px-4 py-5 text-center transition duration-200 ease-out hover:-translate-y-[1px] hover:border-[rgba(17,17,17,0.10)] hover:bg-[rgba(17,17,17,0.03)]"
                                 >
-                                  <span className="text-[42px] font-light leading-none text-[#2F6BFF]">+</span>
+                                  <span className="text-[42px] font-light leading-none text-[#111111]">+</span>
                                 </button>
                               )}
                             </div>
@@ -1817,24 +1817,24 @@ export default function App() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#F7F8FA] pb-24 text-[#111111]">
-      <header className={`sticky top-0 z-30 border-b border-[#E5E7EB] bg-white/95 px-4 shadow-[0_4px_16px_rgba(17,17,17,0.03)] ${isMobileLayout ? 'py-3' : 'py-4'}`}>
+      <header className={`sticky top-0 z-30 border-b border-[rgba(255,255,255,0.7)] bg-[rgba(255,255,255,0.72)] px-4 backdrop-blur-xl shadow-[0_8px_32px_rgba(17,17,17,0.06)] ${isMobileLayout ? 'py-3' : 'py-4'}`}>
         <div className="mx-auto w-full max-w-[1160px] min-w-0">
           <div className={`flex min-w-0 ${isMobileLayout ? 'items-start justify-between gap-3' : 'items-center justify-between gap-6'}`}>
             <div className="flex min-w-0 items-center gap-4">
               <button
                 onClick={() => setIsNavOpen(true)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[#E5E7EB] bg-white text-[#6B7280] shadow-[0_4px_16px_rgba(17,17,17,0.05)] transition duration-200 ease-out hover:-translate-y-[1px] hover:border-[rgba(47,107,255,0.18)] hover:text-[#111111]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[rgba(255,255,255,0.75)] bg-[rgba(255,255,255,0.68)] text-[#6B7280] backdrop-blur-xl shadow-[0_8px_24px_rgba(17,17,17,0.06)] transition duration-200 ease-out hover:-translate-y-[1px] hover:border-[rgba(17,17,17,0.08)] hover:text-[#111111]"
                 aria-label="Open navigation menu"
               >
                 <Menu size={18} />
               </button>
-              <div className={`rounded-[12px] border border-[#E5E7EB] bg-white text-[#111111] shadow-[0_4px_16px_rgba(17,17,17,0.05)] ${isMobileLayout ? 'p-2.5' : 'p-3'}`}><ChefHat size={isMobileLayout ? 22 : 28} /></div>
-              <div className="min-w-0"><h1 className={`break-words font-bold tracking-[-0.04em] text-[#111111] ${isMobileLayout ? 'text-[24px]' : 'text-[32px]'}`}>Culina<span className="text-[#2F6BFF]">Fusion</span></h1><p className="mt-1 text-[12px] text-[#6B7280]">Tailored gastronomy engine</p></div>
+              <div className={`rounded-[12px] border border-[rgba(255,255,255,0.75)] bg-[rgba(255,255,255,0.68)] text-[#111111] backdrop-blur-xl shadow-[0_8px_24px_rgba(17,17,17,0.06)] ${isMobileLayout ? 'p-2.5' : 'p-3'}`}><ChefHat size={isMobileLayout ? 22 : 28} /></div>
+              <div className="min-w-0"><h1 className={`break-words font-bold tracking-[-0.04em] text-[#111111] ${isMobileLayout ? 'text-[24px]' : 'text-[32px]'}`}>CulinaFusion</h1><p className="mt-1 text-[12px] text-[#6B7280]">Tailored gastronomy engine</p></div>
             </div>
             <div className={`flex min-w-0 ${isMobileLayout ? 'justify-end' : 'flex-wrap items-center justify-end'} gap-3`}>
-              <div className={`flex rounded-[10px] border border-[#E5E7EB] bg-white p-1 shadow-[0_4px_16px_rgba(17,17,17,0.04)] ${isMobileLayout ? 'scale-90 origin-top-right' : ''}`}>
-                <button onClick={() => setLayoutMode('mobile')} className={`inline-flex items-center rounded-[8px] px-3 py-2 text-[11px] font-medium transition duration-200 ease-out ${isMobileLayout ? 'bg-[#2F6BFF] text-white shadow-[0_8px_20px_rgba(47,107,255,0.18)]' : 'text-[#6B7280] hover:bg-[rgba(47,107,255,0.06)] hover:text-[#111111]'}`} aria-label="Portrait layout"><Smartphone size={12} /></button>
-                <button onClick={() => setLayoutMode('desktop')} className={`inline-flex items-center rounded-[8px] px-3 py-2 text-[11px] font-medium transition duration-200 ease-out ${!isMobileLayout ? 'bg-[#2F6BFF] text-white shadow-[0_8px_20px_rgba(47,107,255,0.18)]' : 'text-[#6B7280] hover:bg-[rgba(47,107,255,0.06)] hover:text-[#111111]'}`} aria-label="Desktop layout"><Monitor size={12} /></button>
+              <div className={`flex rounded-[10px] border border-[rgba(255,255,255,0.75)] bg-[rgba(255,255,255,0.68)] p-1 backdrop-blur-xl shadow-[0_8px_24px_rgba(17,17,17,0.06)] ${isMobileLayout ? 'scale-90 origin-top-right' : ''}`}>
+                <button onClick={() => setLayoutMode('mobile')} className={`inline-flex items-center rounded-[8px] px-3 py-2 text-[11px] font-medium transition duration-200 ease-out ${isMobileLayout ? 'bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)]' : 'text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'}`} aria-label="Portrait layout"><Smartphone size={12} /></button>
+                <button onClick={() => setLayoutMode('desktop')} className={`inline-flex items-center rounded-[8px] px-3 py-2 text-[11px] font-medium transition duration-200 ease-out ${!isMobileLayout ? 'bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)]' : 'text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'}`} aria-label="Desktop layout"><Monitor size={12} /></button>
               </div>
             </div>
           </div>
@@ -1844,7 +1844,7 @@ export default function App() {
       {isNavOpen && (
         <div className="fixed inset-0 z-40 bg-[rgba(17,17,17,0.35)]" onClick={() => setIsNavOpen(false)}>
           <aside
-            className="h-full w-[min(18rem,82vw)] border-r border-[#E5E7EB] bg-white px-4 py-5 shadow-[0_16px_40px_rgba(17,17,17,0.10)]"
+            className="h-full w-[min(18rem,82vw)] border-r border-[rgba(255,255,255,0.75)] bg-[rgba(255,255,255,0.74)] px-4 py-5 backdrop-blur-2xl shadow-[0_16px_40px_rgba(17,17,17,0.10)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-6 flex items-center justify-between">
@@ -1854,7 +1854,7 @@ export default function App() {
               </div>
               <button
                 onClick={() => setIsNavOpen(false)}
-                className="rounded-[8px] p-2 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(47,107,255,0.06)] hover:text-[#111111]"
+                className="rounded-[8px] p-2 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]"
                 aria-label="Close navigation menu"
               >
                 <XCircle size={18} />
@@ -1877,8 +1877,8 @@ export default function App() {
                   }}
                   className={`flex w-full items-center gap-3 rounded-[10px] px-4 py-3 text-left text-[14px] font-medium transition duration-200 ease-out ${
                     currentView === id
-                      ? 'bg-[rgba(47,107,255,0.08)] text-[#111111]'
-                      : 'text-[#6B7280] hover:bg-[rgba(47,107,255,0.05)] hover:text-[#111111]'
+                      ? 'bg-[rgba(17,17,17,0.06)] text-[#111111]'
+                      : 'text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'
                   }`}
                 >
                   {React.createElement(icon, { size: 16 })}
@@ -1896,7 +1896,7 @@ export default function App() {
             <div className="min-w-0">{menuContent}</div>
 
             <div className={`${isMobileLayout ? 'mt-5' : 'mt-8'} flex justify-center`}>
-              <button onClick={() => generateRecipes(false)} disabled={loading} className={`flex w-full max-w-[1160px] items-center justify-center gap-3 rounded-[12px] bg-[#2F6BFF] font-semibold text-white shadow-[0_12px_32px_rgba(47,107,255,0.24)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#255AE0] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#D1D5DB] disabled:shadow-none ${isMobileLayout ? 'px-5 py-4 text-[14px]' : 'px-6 py-4 text-[15px]'}`}>
+              <button onClick={() => generateRecipes(false)} disabled={loading} className={`flex w-full max-w-[1160px] items-center justify-center gap-3 rounded-[12px] bg-[#111111] font-semibold text-white shadow-[0_12px_32px_rgba(17,17,17,0.18)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#1F2937] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#D1D5DB] disabled:shadow-none ${isMobileLayout ? 'px-5 py-4 text-[14px]' : 'px-6 py-4 text-[15px]'}`}>
                 {loading ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
                 <span>{loading ? 'Generating menu...' : 'Construct Menu'}</span>
               </button>
@@ -1925,8 +1925,8 @@ export default function App() {
                             }}
                             className={`absolute right-0 top-0 rounded-full p-2 transition duration-200 ease-out ${
                               getSavedGeneratedRecipe(recipe)?.isFavorite
-                                ? 'text-[#2F6BFF]'
-                                : 'text-[#9CA3AF] hover:bg-[rgba(47,107,255,0.06)] hover:text-[#111111]'
+                                ? 'text-[#111111]'
+                                : 'text-[#9CA3AF] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'
                             } ${isMobileLayout ? 'mr-0 mt-0' : 'mr-8 mt-8'}`}
                             aria-label={getSavedGeneratedRecipe(recipe)?.isFavorite ? 'Saved as favorite' : 'Save recipe as favorite'}
                           >
@@ -1934,13 +1934,13 @@ export default function App() {
                           </button>
                           <div className="mb-3 flex flex-wrap gap-2">
                             <span className="rounded-full bg-[#F7F8FA] px-3 py-1 text-[11px] font-medium text-[#6B7280]">{recipe.styleTag}</span>
-                            <span className="rounded-full bg-[rgba(47,107,255,0.08)] px-3 py-1 text-[11px] font-medium text-[#2F6BFF]">Balanced</span>
+                            <span className="rounded-full bg-[rgba(17,17,17,0.06)] px-3 py-1 text-[11px] font-medium text-[#111111]">Balanced</span>
                           </div>
                           <h3 className={`${isMobileLayout ? 'text-[20px]' : 'text-[30px]'} font-semibold leading-tight text-[#111111]`}>{getDisplayRecipeTitle(recipe)}</h3>
                           <p className={`text-[15px] leading-relaxed text-[#6B7280] ${isMobileLayout ? 'mt-3' : 'mt-4'}`}>{recipe.description}</p>
                           <div className={`${isMobileLayout ? 'mt-3' : 'mt-5'} flex flex-wrap gap-2`}>
-                            <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Clock size={12} className="mr-2 text-[#2F6BFF]" />{recipe.prepTime}</div>
-                            <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Flame size={12} className="mr-2 text-[#2F6BFF]" />{recipe.cookTime}</div>
+                            <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Clock size={12} className="mr-2 text-[#111111]" />{recipe.prepTime}</div>
+                            <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Flame size={12} className="mr-2 text-[#111111]" />{recipe.cookTime}</div>
                           </div>
                           <div className={`${isMobileLayout ? 'mt-3' : 'mt-5'} flex`}>
                             <button
@@ -1953,23 +1953,23 @@ export default function App() {
                         </div>
                         <div className={isMobileLayout ? 'min-w-0 space-y-5 px-4 py-4' : 'min-w-0 p-8 lg:w-[70%]'}>
                           <div className={`grid min-w-0 ${isMobileLayout ? 'gap-5 grid-cols-1' : 'gap-8 lg:grid-cols-3 lg:gap-8'}`}>
-                            <div><h4 className="mb-4 text-[13px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Ingredients</h4><ul className="space-y-3 text-[15px] text-[#111111]">{recipe.ingredients.map((ingredient, itemIndex) => <li key={itemIndex} className="flex items-start"><span className="mr-2 mt-1.5 h-1.5 w-1.5 rounded-full bg-[#2F6BFF]" />{ingredient}</li>)}</ul></div>
-                            <div><h4 className="mb-4 text-[13px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Execution</h4><ol className="space-y-4 text-[15px]">{recipe.instructions.map((step, stepIndex) => <li key={stepIndex} className="flex gap-3"><span className="pt-0.5 text-[13px] font-semibold text-[#2F6BFF]">{stepIndex + 1}.</span><span className="leading-relaxed text-[#6B7280]">{step}</span></li>)}</ol></div>
+                            <div><h4 className="mb-4 text-[13px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Ingredients</h4><ul className="space-y-3 text-[15px] text-[#111111]">{recipe.ingredients.map((ingredient, itemIndex) => <li key={itemIndex} className="flex items-start"><span className="mr-2 mt-1.5 h-1.5 w-1.5 rounded-full bg-[#111111]" />{ingredient}</li>)}</ul></div>
+                            <div><h4 className="mb-4 text-[13px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Execution</h4><ol className="space-y-4 text-[15px]">{recipe.instructions.map((step, stepIndex) => <li key={stepIndex} className="flex gap-3"><span className="pt-0.5 text-[13px] font-semibold text-[#111111]">{stepIndex + 1}.</span><span className="leading-relaxed text-[#6B7280]">{step}</span></li>)}</ol></div>
                             <div><h4 className="mb-4 text-[13px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Cooking Tips</h4><ul className="space-y-3 text-[15px]">{recipe.cookingTips?.map((tip, tipIndex) => <li key={tipIndex} className="rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] px-4 py-3 leading-relaxed text-[#6B7280]">{tip}</li>)}</ul></div>
                           </div>
                         </div>
                       </div>
-                      {isToddlerFriendly && recipe.toddlerAdaptation && <div className={`${isMobileLayout ? 'px-4 py-4' : 'flex items-start gap-4 p-8'} border-t border-[#E5E7EB] bg-[rgba(47,107,255,0.05)]`}><div className={`${isMobileLayout ? 'mb-2 flex items-center gap-2' : 'rounded-[10px] bg-[rgba(47,107,255,0.08)] p-3 text-[#2F6BFF]'} text-[12px] font-medium`}>{isMobileLayout ? <><Baby size={14} />Toddler Adaptation</> : <Baby size={20} />}</div><div><h5 className={`${isMobileLayout ? 'sr-only' : 'mb-1'} text-[12px] font-medium text-[#2F6BFF]`}>{isMobileLayout ? 'Toddler Adaptation' : 'Toddler Adaptation Advice'}</h5><p className="text-[15px] leading-relaxed text-[#6B7280]">{recipe.toddlerAdaptation}</p></div></div>}
+                      {isToddlerFriendly && recipe.toddlerAdaptation && <div className={`${isMobileLayout ? 'px-4 py-4' : 'flex items-start gap-4 p-8'} border-t border-[#E5E7EB] bg-[rgba(17,17,17,0.03)]`}><div className={`${isMobileLayout ? 'mb-2 flex items-center gap-2' : 'rounded-[10px] bg-[rgba(17,17,17,0.06)] p-3 text-[#111111]'} text-[12px] font-medium`}>{isMobileLayout ? <><Baby size={14} />Toddler Adaptation</> : <Baby size={20} />}</div><div><h5 className={`${isMobileLayout ? 'sr-only' : 'mb-1'} text-[12px] font-medium text-[#111111]`}>{isMobileLayout ? 'Toddler Adaptation' : 'Toddler Adaptation Advice'}</h5><p className="text-[15px] leading-relaxed text-[#6B7280]">{recipe.toddlerAdaptation}</p></div></div>}
                     </article>
                   ))}
                 </div>
 
                 <div className={`overflow-hidden rounded-[12px] border border-[#E5E7EB] bg-white shadow-[0_4px_16px_rgba(17,17,17,0.05)] ${isMobileLayout ? 'mt-5 p-4' : 'mt-10 p-8'}`}>
-                  <div className="mb-3 flex items-center gap-3 text-[12px] font-medium text-[#2F6BFF]"><Undo2 size={16} /><span>Refinement</span></div>
+                  <div className="mb-3 flex items-center gap-3 text-[12px] font-medium text-[#111111]"><Undo2 size={16} /><span>Refinement</span></div>
                   <h3 className="text-[22px] font-semibold text-[#111111]">Refine specific dishes?</h3>
               <div className={`mt-5 flex min-w-0 gap-4 ${isMobileLayout ? 'flex-col' : 'flex-col lg:flex-row'}`}>
-                    <textarea className="min-h-[112px] flex-1 rounded-[10px] border border-[#E5E7EB] bg-white p-5 text-[15px] text-[#111111] outline-none placeholder:text-[#9CA3AF] focus:border-[#2F6BFF] focus:ring-2 focus:ring-[rgba(47,107,255,0.12)]" placeholder="e.g. Swap salmon for sea bass..." value={followUpComment} onChange={(e) => setFollowUpComment(e.target.value)} />
-                    <button onClick={() => generateRecipes(true)} disabled={loading || !followUpComment.trim()} className="flex items-center justify-center gap-3 rounded-[10px] bg-[#2F6BFF] px-10 py-4 text-[14px] font-semibold text-white shadow-[0_8px_24px_rgba(47,107,255,0.22)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#255AE0] active:scale-[0.98] disabled:opacity-40"><RefreshCcw size={18} />Update</button>
+                    <textarea className="min-h-[112px] flex-1 rounded-[10px] border border-[#E5E7EB] bg-white p-5 text-[15px] text-[#111111] outline-none placeholder:text-[#9CA3AF] focus:border-[#111111] focus:ring-2 focus:ring-[rgba(17,17,17,0.10)]" placeholder="e.g. Swap salmon for sea bass..." value={followUpComment} onChange={(e) => setFollowUpComment(e.target.value)} />
+                    <button onClick={() => generateRecipes(true)} disabled={loading || !followUpComment.trim()} className="flex items-center justify-center gap-3 rounded-[10px] bg-[#111111] px-10 py-4 text-[14px] font-semibold text-white shadow-[0_8px_24px_rgba(17,17,17,0.18)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#1F2937] active:scale-[0.98] disabled:opacity-40"><RefreshCcw size={18} />Update</button>
                   </div>
                 </div>
               </section>
@@ -2003,17 +2003,17 @@ export default function App() {
                     assignRecipeToPlannerSlot(plannerPickerTarget.day, plannerPickerTarget.slot, plannerPickerTarget.dishIndex, recipe.id);
                     setPlannerPickerTarget(null);
                   }}
-                  className="flex w-full min-w-0 items-start justify-between gap-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] px-4 py-3 text-left transition duration-200 ease-out hover:-translate-y-[1px] hover:border-[rgba(47,107,255,0.18)] hover:bg-white hover:shadow-[0_8px_20px_rgba(17,17,17,0.06)]"
+                  className="flex w-full min-w-0 items-start justify-between gap-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] px-4 py-3 text-left transition duration-200 ease-out hover:-translate-y-[1px] hover:border-[rgba(17,17,17,0.10)] hover:bg-white hover:shadow-[0_8px_20px_rgba(17,17,17,0.06)]"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-[15px] font-semibold leading-snug text-[#111111] break-words [overflow-wrap:anywhere]">{getDisplayRecipeTitle(recipe)}</p>
                     <div className="mt-1 flex min-w-0 flex-wrap gap-2 text-[11px] text-[#6B7280]">
                       <span className="rounded-full bg-white px-2 py-0.5 capitalize">{recipe.mealType}</span>
                       {recipe.styleTag ? <span className="min-w-0 max-w-full rounded-full bg-white px-2 py-0.5 break-words [overflow-wrap:anywhere]">{recipe.styleTag}</span> : null}
-                      {recipe.isFavorite ? <span className="rounded-full bg-[rgba(47,107,255,0.08)] px-2 py-0.5 text-[#2F6BFF]">Favorite</span> : null}
+                      {recipe.isFavorite ? <span className="rounded-full bg-[rgba(17,17,17,0.06)] px-2 py-0.5 text-[#111111]">Favorite</span> : null}
                     </div>
                   </div>
-                  <span className="shrink-0 rounded-full bg-[rgba(47,107,255,0.08)] px-3 py-1 text-[11px] font-medium text-[#2F6BFF]">Select</span>
+                  <span className="shrink-0 rounded-full bg-[rgba(17,17,17,0.06)] px-3 py-1 text-[11px] font-medium text-[#111111]">Select</span>
                 </button>
               )) : (
                 <div className="rounded-[12px] border border-dashed border-[#D1D5DB] bg-[#F7F8FA] px-4 py-6 text-center text-[14px] leading-relaxed text-[#6B7280]">
@@ -2099,13 +2099,13 @@ export default function App() {
                       onClick={() => toggleGroceryPlannerDay(day)}
                       className={`rounded-xl border px-4 py-3 text-left text-[14px] font-medium transition ${
                         isSelected
-                          ? 'border-[#2F6BFF] bg-[rgba(47,107,255,0.08)] text-[#111111]'
+                          ? 'border-[#111111] bg-[rgba(17,17,17,0.06)] text-[#111111]'
                           : 'border-[#E5E7EB] bg-white text-[#6B7280]'
                       }`}
                     >
                       <span className="flex items-center justify-between gap-3">
                         <span>{day}</span>
-                        {isSelected ? <span className="text-[15px] font-semibold text-[#2F6BFF]">✓</span> : null}
+                        {isSelected ? <span className="text-[15px] font-semibold text-[#111111]">✓</span> : null}
                       </span>
                     </button>
                   );
@@ -2141,7 +2141,7 @@ export default function App() {
                 <div className="space-y-2">
                   <label className="text-[12px] font-medium text-[#6B7280]">Modification Request</label>
                   <textarea
-                    className="min-h-[112px] w-full rounded-[10px] border border-[#E5E7EB] bg-white p-4 text-[15px] text-[#111111] outline-none placeholder:text-[#9CA3AF] focus:border-[#2F6BFF] focus:ring-2 focus:ring-[rgba(47,107,255,0.12)]"
+                    className="min-h-[112px] w-full rounded-[10px] border border-[#E5E7EB] bg-white p-4 text-[15px] text-[#111111] outline-none placeholder:text-[#9CA3AF] focus:border-[#111111] focus:ring-2 focus:ring-[rgba(17,17,17,0.10)]"
                     placeholder="e.g. make this less oily, swap pork for chicken, shorten cooking time..."
                     value={recipeTunePrompt}
                     onChange={(e) => setRecipeTunePrompt(e.target.value)}
@@ -2177,7 +2177,7 @@ export default function App() {
                         <h5 className="mb-2 text-[13px] font-medium text-[#6B7280]">Instructions</h5>
                         <ol className="space-y-2 text-[14px] text-[#111111]">
                           {recipeTuneDraft.instructions?.map((step, index) => (
-                            <li key={index} className="flex gap-2"><span className="font-semibold text-[#2F6BFF]">{index + 1}.</span><span>{step}</span></li>
+                            <li key={index} className="flex gap-2"><span className="font-semibold text-[#111111]">{index + 1}.</span><span>{step}</span></li>
                           ))}
                         </ol>
                       </div>
@@ -2232,7 +2232,7 @@ export default function App() {
               </div>
               <button
                 onClick={() => setSelectedSavedRecipe(null)}
-                className="rounded-[8px] p-2 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(47,107,255,0.06)] hover:text-[#111111]"
+                className="rounded-[8px] p-2 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]"
               >
                 <XCircle size={18} />
               </button>
@@ -2241,7 +2241,7 @@ export default function App() {
               <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                 <div className="min-w-0">
                   {selectedSavedRecipe.styleTag && (
-                    <span className="mb-3 inline-flex rounded-full bg-[rgba(47,107,255,0.08)] px-3 py-1 text-[11px] font-medium text-[#2F6BFF]">{selectedSavedRecipe.styleTag}</span>
+                    <span className="mb-3 inline-flex rounded-full bg-[rgba(17,17,17,0.06)] px-3 py-1 text-[11px] font-medium text-[#111111]">{selectedSavedRecipe.styleTag}</span>
                   )}
                   {selectedSavedRecipe.description && (
                     <p className="text-[15px] leading-relaxed text-[#6B7280]">{selectedSavedRecipe.description}</p>
@@ -2249,13 +2249,13 @@ export default function App() {
                   <div className="mt-5 flex flex-wrap gap-2">
                     {selectedSavedRecipe.prepTime && (
                       <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]">
-                        <Clock size={12} className="mr-2 text-[#2F6BFF]" />
+                        <Clock size={12} className="mr-2 text-[#111111]" />
                         {selectedSavedRecipe.prepTime}
                       </div>
                     )}
                     {selectedSavedRecipe.cookTime && (
                       <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]">
-                        <Flame size={12} className="mr-2 text-[#2F6BFF]" />
+                        <Flame size={12} className="mr-2 text-[#111111]" />
                         {selectedSavedRecipe.cookTime}
                       </div>
                     )}
@@ -2283,7 +2283,7 @@ export default function App() {
                       <ol className="space-y-4 text-[15px]">
                         {selectedSavedRecipe.instructions.map((step, index) => (
                           <li key={index} className="flex gap-3">
-                            <span className="pt-0.5 text-[13px] font-semibold text-[#2F6BFF]">{index + 1}.</span>
+                            <span className="pt-0.5 text-[13px] font-semibold text-[#111111]">{index + 1}.</span>
                             <span className="leading-relaxed text-[#6B7280]">{step}</span>
                           </li>
                         ))}
@@ -2309,8 +2309,8 @@ export default function App() {
               )}
 
               {selectedSavedRecipe.toddlerAdaptation && (
-                <div className="mt-6 rounded-[12px] border border-[#E5E7EB] bg-[rgba(47,107,255,0.06)] px-5 py-4">
-                  <div className="mb-2 flex items-center gap-2 text-[13px] font-medium text-[#2F6BFF]">
+                <div className="mt-6 rounded-[12px] border border-[#E5E7EB] bg-[rgba(17,17,17,0.04)] px-5 py-4">
+                  <div className="mb-2 flex items-center gap-2 text-[13px] font-medium text-[#111111]">
                     <Baby size={14} />
                     <span>Toddler Adaptation</span>
                   </div>
@@ -2327,7 +2327,7 @@ export default function App() {
                 </button>
                 <button
                   onClick={() => deleteSavedRecipe(selectedSavedRecipe.id)}
-                  className="inline-flex items-center gap-2 rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(47,107,255,0.06)]"
+                  className="inline-flex items-center gap-2 rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(17,17,17,0.04)]"
                 >
                   <Trash2 size={16} />
                   <span>Delete</span>
@@ -2336,7 +2336,7 @@ export default function App() {
                   onClick={() => toggleFavoriteRecipe(selectedSavedRecipe.id, selectedSavedRecipe.isFavorite)}
                   className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-[13px] font-semibold transition duration-200 ease-out ${
                     selectedSavedRecipe.isFavorite
-                      ? 'border-[#2F6BFF] bg-[rgba(47,107,255,0.08)] text-[#2F6BFF]'
+                      ? 'border-[#111111] bg-[rgba(17,17,17,0.06)] text-[#111111]'
                       : 'border-[#E5E7EB] bg-white text-[#6B7280]'
                   }`}
                 >
@@ -2365,7 +2365,7 @@ export default function App() {
                 }}
                 className={`flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-[14px] font-semibold transition duration-200 ease-out ${
                   activeSavedRecipeActions.isFavorite
-                    ? 'border-[#2F6BFF] bg-[rgba(47,107,255,0.08)] text-[#2F6BFF]'
+                    ? 'border-[#111111] bg-[rgba(17,17,17,0.06)] text-[#111111]'
                     : 'border-[#E5E7EB] bg-white text-[#6B7280]'
                 }`}
               >
@@ -2377,7 +2377,7 @@ export default function App() {
                   deleteSavedRecipe(activeSavedRecipeActions.id);
                   setActiveSavedRecipeActions(null);
                 }}
-                className="flex w-full items-center justify-center gap-2 rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-3 text-[14px] font-semibold text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(47,107,255,0.06)]"
+                className="flex w-full items-center justify-center gap-2 rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-3 text-[14px] font-semibold text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(17,17,17,0.04)]"
               >
                 <Trash2 size={16} />
                 <span>Delete</span>
@@ -2407,7 +2407,7 @@ export default function App() {
                   setRecipeAnswer('');
                   setActiveSavedRecipeActions(null);
                 }}
-                className="flex w-full items-center justify-center gap-2 rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-3 text-[14px] font-semibold text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(47,107,255,0.06)] hover:text-[#111111]"
+                className="flex w-full items-center justify-center gap-2 rounded-[10px] border border-[#E5E7EB] bg-white px-4 py-3 text-[14px] font-semibold text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]"
               >
                 <MessageSquareMore size={16} />
                 Ask AI Follow-up
@@ -2427,14 +2427,14 @@ export default function App() {
               </div>
               <button
                 onClick={() => setRecipeQuestionTarget(null)}
-                className="rounded-[8px] p-2 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(47,107,255,0.06)] hover:text-[#111111]"
+                className="rounded-[8px] p-2 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]"
               >
                 <XCircle size={18} />
               </button>
             </div>
             <div className="space-y-3">
               <textarea
-                className="min-h-[112px] w-full rounded-[10px] border border-[#E5E7EB] bg-white p-4 text-[15px] text-[#111111] outline-none placeholder:text-[#9CA3AF] focus:border-[#2F6BFF] focus:ring-2 focus:ring-[rgba(47,107,255,0.12)]"
+                className="min-h-[112px] w-full rounded-[10px] border border-[#E5E7EB] bg-white p-4 text-[15px] text-[#111111] outline-none placeholder:text-[#9CA3AF] focus:border-[#111111] focus:ring-2 focus:ring-[rgba(17,17,17,0.10)]"
                 placeholder="Ask about substitutions, timing, technique, serving ideas, or adjustments..."
                 value={recipeQuestion}
                 onChange={(e) => setRecipeQuestion(e.target.value)}
@@ -2442,7 +2442,7 @@ export default function App() {
               <button
                 onClick={askRecipeFollowUp}
                 disabled={recipeQuestionLoading || !recipeQuestion.trim()}
-                className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#2F6BFF] px-4 py-3 text-[14px] font-semibold text-white shadow-[0_8px_24px_rgba(47,107,255,0.22)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#255AE0] disabled:cursor-not-allowed disabled:bg-[#D1D5DB] disabled:shadow-none"
+                className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#111111] px-4 py-3 text-[14px] font-semibold text-white shadow-[0_8px_24px_rgba(17,17,17,0.18)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#1F2937] disabled:cursor-not-allowed disabled:bg-[#D1D5DB] disabled:shadow-none"
               >
                 {recipeQuestionLoading ? <Loader2 className="animate-spin" size={16} /> : <MessageSquareMore size={16} />}
                 <span>{recipeQuestionLoading ? 'Asking AI...' : 'Ask AI'}</span>
