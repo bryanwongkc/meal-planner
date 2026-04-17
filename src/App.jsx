@@ -187,6 +187,20 @@ const deleteSavedRecipe = async (recipeId) => {
   }
 };
 
+const updateSavedRecipe = async (recipeId, recipe) => {
+  try {
+    await updateDoc(doc(db, 'recipes', recipeId), {
+      ...recipe,
+      title: getDisplayRecipeTitle(recipe),
+      updatedAt: serverTimestamp()
+    });
+    return true;
+  } catch (e) {
+    console.error('Error updating recipe:', e);
+    return false;
+  }
+};
+
 const getDisplayRecipeTitle = (recipe) => {
   if (!recipe) return '';
 
@@ -397,6 +411,10 @@ export default function App() {
   const [recipeQuestion, setRecipeQuestion] = useState('');
   const [recipeAnswer, setRecipeAnswer] = useState('');
   const [recipeQuestionLoading, setRecipeQuestionLoading] = useState(false);
+  const [recipeTuneTarget, setRecipeTuneTarget] = useState(null);
+  const [recipeTunePrompt, setRecipeTunePrompt] = useState('');
+  const [recipeTuneDraft, setRecipeTuneDraft] = useState(null);
+  const [recipeTuneLoading, setRecipeTuneLoading] = useState(false);
   const [weeklyPlanner, setWeeklyPlanner] = useState(createEmptyWeeklyPlanner);
   const [savedMealFilter, setSavedMealFilter] = useState('All');
   const [savedSearch, setSavedSearch] = useState('');
@@ -799,6 +817,129 @@ export default function App() {
     } finally {
       setRecipeQuestionLoading(false);
     }
+  };
+
+  const openRecipeTuneModal = (recipe) => {
+    setRecipeTuneTarget(recipe);
+    setRecipeTunePrompt('');
+    setRecipeTuneDraft(null);
+  };
+
+  const requestRecipeTune = async () => {
+    if (!recipeTuneTarget || !recipeTunePrompt.trim()) return;
+
+    setRecipeTuneLoading(true);
+    setError('');
+    setRecipeTuneDraft(null);
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const model = 'gemini-3.1-flash-lite-preview';
+    if (!apiKey) {
+      setError('Missing Gemini API key. Set VITE_GEMINI_API_KEY in your Vercel environment variables.');
+      setRecipeTuneLoading(false);
+      return;
+    }
+
+    const prompt = [
+      'ROLE',
+      'You are a practical cooking assistant updating an existing saved recipe based on user modification requests.',
+      '',
+      buildPromptSection('RECIPE CONTEXT', [
+        `TITLE: ${getDisplayRecipeTitle(recipeTuneTarget) || 'Unknown'}`,
+        `MEAL_TYPE: ${recipeTuneTarget.mealType || 'Unknown'}`,
+        `STYLE_TAG: ${recipeTuneTarget.styleTag || 'Unknown'}`,
+        `DESCRIPTION: ${recipeTuneTarget.description || 'None'}`,
+        `PREP_TIME: ${recipeTuneTarget.prepTime || 'Unknown'}`,
+        `COOK_TIME: ${recipeTuneTarget.cookTime || 'Unknown'}`,
+        `INGREDIENTS: ${recipeTuneTarget.ingredients?.join(' | ') || 'None'}`,
+        `INSTRUCTIONS: ${recipeTuneTarget.instructions?.join(' | ') || 'None'}`,
+        `COOKING_TIPS: ${recipeTuneTarget.cookingTips?.join(' | ') || 'None'}`,
+        `TODDLER_ADAPTATION: ${recipeTuneTarget.toddlerAdaptation || 'None'}`
+      ]),
+      '',
+      buildPromptSection('MODIFICATION REQUEST', [
+        recipeTunePrompt.trim()
+      ]),
+      '',
+      buildPromptSection('OUTPUT REQUIREMENTS', [
+        'Return one full updated recipe object as JSON.',
+        'Keep the recipe coherent and practical.',
+        'Preserve the overall spirit of the original recipe unless the request clearly changes it.',
+        'Use Traditional Chinese only if chineseName is included.',
+        'Return fields: name, chineseName, styleTag, description, prepTime, cookTime, ingredients, instructions, cookingTips, toddlerAdaptation.'
+      ])
+    ].join('\n');
+
+    setLastGeminiPrompt(prompt);
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: 'OBJECT',
+              properties: {
+                name: { type: 'STRING' },
+                chineseName: { type: 'STRING' },
+                styleTag: { type: 'STRING' },
+                description: { type: 'STRING' },
+                prepTime: { type: 'STRING' },
+                cookTime: { type: 'STRING' },
+                ingredients: { type: 'ARRAY', items: { type: 'STRING' } },
+                instructions: { type: 'ARRAY', items: { type: 'STRING' } },
+                cookingTips: { type: 'ARRAY', items: { type: 'STRING' } },
+                toddlerAdaptation: { type: 'STRING' }
+              },
+              required: ['name', 'styleTag', 'description', 'prepTime', 'cookTime', 'ingredients', 'instructions', 'cookingTips']
+            }
+          }
+        })
+      });
+
+      let data = null;
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+
+      if (!response.ok) throw new Error(`API call failed with status ${response.status}`);
+
+      const resultText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!resultText) throw new Error('API returned no recipe payload');
+
+      const parsedRecipe = JSON.parse(resultText);
+      setRecipeTuneDraft({
+        ...recipeTuneTarget,
+        ...parsedRecipe,
+        mealType: recipeTuneTarget.mealType,
+        isFavorite: recipeTuneTarget.isFavorite
+      });
+    } catch {
+      setError('Gemini recipe update failed. Check VITE_GEMINI_API_KEY and deployment logs.');
+    } finally {
+      setRecipeTuneLoading(false);
+    }
+  };
+
+  const keepRecipeTune = async () => {
+    if (!recipeTuneTarget?.id || !recipeTuneDraft) return;
+
+    const success = await updateSavedRecipe(recipeTuneTarget.id, recipeTuneDraft);
+    if (!success) {
+      setError('Unable to save updated recipe.');
+      return;
+    }
+
+    setSelectedSavedRecipe((current) => (current?.id === recipeTuneTarget.id ? { ...current, ...recipeTuneDraft } : current));
+    setActiveSavedRecipeActions((current) => (current?.id === recipeTuneTarget.id ? { ...current, ...recipeTuneDraft } : current));
+    setRecipeTuneTarget(null);
+    setRecipeTuneDraft(null);
+    setRecipeTunePrompt('');
   };
 
   const assignRecipeToPlannerSlot = (day, slot, dishIndex, recipeId) => {
@@ -1385,12 +1526,20 @@ export default function App() {
                   <p className="mt-1 break-words text-[14px] capitalize text-[#6B7280]">{recipe.mealType}</p>
                 </button>
                 <div className="mt-3 flex justify-end">
-                  <button
-                    onClick={() => openPlannerAssignmentModal(recipe, 'saved')}
-                    className={secondaryButtonClass}
-                  >
-                    Add to Weekly Planner
-                  </button>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <button
+                      onClick={() => openRecipeTuneModal(recipe)}
+                      className={secondaryButtonClass}
+                    >
+                      Fine Tune
+                    </button>
+                    <button
+                      onClick={() => openPlannerAssignmentModal(recipe, 'saved')}
+                      className={secondaryButtonClass}
+                    >
+                      Add to Weekly Planner
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -1965,6 +2114,99 @@ export default function App() {
         </div>
       )}
 
+      {recipeTuneTarget && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(17,17,17,0.4)] p-4 sm:items-center" onClick={() => {
+          setRecipeTuneTarget(null);
+          setRecipeTuneDraft(null);
+        }}>
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl min-w-0 flex-col overflow-hidden rounded-[28px] border border-[#E5E7EB] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.18)]" onClick={(e) => e.stopPropagation()}>
+            <div className="border-b border-[#E5E7EB] px-5 py-4">
+              <p className="text-[12px] font-medium uppercase tracking-[0.16em] text-[#6B7280]">Fine Tune Recipe</p>
+              <h3 className="mt-1 break-words text-[20px] font-semibold text-[#111111]">{getDisplayRecipeTitle(recipeTuneTarget)}</h3>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[12px] font-medium text-[#6B7280]">Modification Request</label>
+                  <textarea
+                    className="min-h-[112px] w-full rounded-xl border border-[#E5E7EB] bg-white p-4 text-[15px] text-[#111111] outline-none placeholder:text-[#6B7280] focus:border-[#6B7280] focus:ring-2 focus:ring-[rgba(107,114,128,0.12)]"
+                    placeholder="e.g. make this less oily, swap pork for chicken, shorten cooking time..."
+                    value={recipeTunePrompt}
+                    onChange={(e) => setRecipeTunePrompt(e.target.value)}
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={requestRecipeTune}
+                    disabled={recipeTuneLoading || !recipeTunePrompt.trim()}
+                    className={primaryButtonClass}
+                  >
+                    {recipeTuneLoading ? 'Generating Draft...' : 'Generate Draft'}
+                  </button>
+                </div>
+
+                {recipeTuneDraft && (
+                  <div className="space-y-4 rounded-2xl border border-[#E5E7EB] bg-[#F7F8FA] p-4">
+                    <div>
+                      <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">Draft Preview</p>
+                      <h4 className="mt-2 break-words text-[22px] font-semibold text-[#111111]">{getDisplayRecipeTitle(recipeTuneDraft)}</h4>
+                      <p className="mt-2 text-[15px] leading-relaxed text-[#6B7280]">{recipeTuneDraft.description}</p>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <h5 className="mb-2 text-[13px] font-medium text-[#6B7280]">Ingredients</h5>
+                        <ul className="space-y-2 text-[14px] text-[#111111]">
+                          {recipeTuneDraft.ingredients?.map((ingredient, index) => (
+                            <li key={index} className="flex items-start"><span className="mr-2 mt-1.5 h-1.5 w-1.5 rounded-full bg-[#6B7280]" />{ingredient}</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h5 className="mb-2 text-[13px] font-medium text-[#6B7280]">Instructions</h5>
+                        <ol className="space-y-2 text-[14px] text-[#111111]">
+                          {recipeTuneDraft.instructions?.map((step, index) => (
+                            <li key={index} className="flex gap-2"><span className="font-semibold text-[#4B5563]">{index + 1}.</span><span>{step}</span></li>
+                          ))}
+                        </ol>
+                      </div>
+                    </div>
+                    {recipeTuneDraft.cookingTips?.length > 0 && (
+                      <div>
+                        <h5 className="mb-2 text-[13px] font-medium text-[#6B7280]">Cooking Tips</h5>
+                        <div className="grid gap-2">
+                          {recipeTuneDraft.cookingTips.map((tip, index) => (
+                            <div key={index} className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-[14px] text-[#6B7280]">{tip}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E5E7EB] px-5 py-4">
+              <button
+                onClick={() => {
+                  setRecipeTuneTarget(null);
+                  setRecipeTuneDraft(null);
+                  setRecipeTunePrompt('');
+                }}
+                className={secondaryButtonClass}
+              >
+                Discard Change
+              </button>
+              <button
+                onClick={keepRecipeTune}
+                className={primaryButtonClass}
+                disabled={!recipeTuneDraft}
+              >
+                Keep Change
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedSavedRecipe && (
         <div className="fixed inset-0 z-40 flex items-end justify-center bg-[rgba(17,17,17,0.45)] p-4 sm:items-center">
           <div className={`flex max-h-[calc(100vh-2rem)] w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-[#EEEEEE] bg-white shadow-[0_20px_48px_rgba(0,0,0,0.18)] ${isMobileLayout ? 'max-w-[calc(100vw-2rem)]' : 'max-w-[min(64rem,calc(100vw-2rem))]'}`}>
@@ -2066,6 +2308,12 @@ export default function App() {
 
               <div className="mt-6 flex justify-end gap-3">
                 <button
+                  onClick={() => openRecipeTuneModal(selectedSavedRecipe)}
+                  className={secondaryButtonClass}
+                >
+                  Fine Tune
+                </button>
+                <button
                   onClick={() => deleteSavedRecipe(selectedSavedRecipe.id)}
                   className="inline-flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(107,114,128,0.08)]"
                 >
@@ -2130,6 +2378,15 @@ export default function App() {
                 className="flex w-full items-center justify-center rounded-xl bg-[#4B5563] px-4 py-3 text-[14px] font-semibold text-white transition duration-200 ease-out hover:bg-[#374151]"
               >
                 View Details
+              </button>
+              <button
+                onClick={() => {
+                  openRecipeTuneModal(activeSavedRecipeActions);
+                  setActiveSavedRecipeActions(null);
+                }}
+                className="flex w-full items-center justify-center rounded-xl bg-[#4B5563] px-4 py-3 text-[14px] font-semibold text-white transition duration-200 ease-out hover:bg-[#374151]"
+              >
+                Fine Tune Recipe
               </button>
               <button
                 onClick={() => {
