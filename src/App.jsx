@@ -464,8 +464,8 @@ export default function App() {
   const [flavorHealthBalance, setFlavorHealthBalance] = useState(50);
   const proteinOptions = useIngredientOptions('proteinOptions', DEFAULT_PROTEIN_OPTIONS);
   const fiberOptions = useIngredientOptions('fiberOptions', DEFAULT_FIBER_OPTIONS);
-  const [proteins, setProteins] = useState([{ value: DEFAULT_PROTEIN_OPTIONS[0], customText: '' }]);
-  const [fibers, setFibers] = useState([{ value: DEFAULT_FIBER_OPTIONS[0], customText: '' }]);
+  const [proteins, setProteins] = useState([]);
+  const [fibers, setFibers] = useState([]);
   const [mealType, setMealType] = useState(MEAL_TYPES[2]);
   const [todayPreference, setTodayPreference] = useState('');
   const [location, setLocation] = useState(LOCATIONS[0].value);
