@@ -14,6 +14,11 @@ const SAVED_FILTERS = ['All', ...MEAL_TYPES];
 const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const LOCATIONS = [{ value: 'supermarket', label: 'Supermarket' }, { value: 'wet market', label: 'Wet Market' }];
 const DIFFICULTIES = [{ value: 'Very Easy', label: 'Very Easy (Fusion/Western only)' }, { value: 'Easy', label: 'Easy' }, { value: 'Medium', label: 'Medium' }, { value: 'Hard', label: 'Hard' }];
+const STYLE_OPTIONS = [
+  { value: 'Chinese', label: 'Chinese' },
+  { value: 'Japanese', label: 'Japanese' },
+  { value: 'Western', label: 'Western' }
+];
 const DEFAULT_DIETARY_RULES = [
   { id: 'no-spicy', text: 'No Spicy Food', order: 0 },
   { id: 'one-veg', text: '1x Strictly Vegetarian', order: 1 },
@@ -385,7 +390,7 @@ export default function App() {
   const [dishCount, setDishCount] = useState(3);
   const [dinerCount, setDinerCount] = useState(3);
   const [isToddlerFriendly, setIsToddlerFriendly] = useState(false);
-  const [styleWeight, setStyleWeight] = useState(-100);
+  const [styleWeight, setStyleWeight] = useState('Chinese');
   const [flavorHealthBalance, setFlavorHealthBalance] = useState(50);
   const proteinOptions = useIngredientOptions('proteinOptions', DEFAULT_PROTEIN_OPTIONS);
   const fiberOptions = useIngredientOptions('fiberOptions', DEFAULT_FIBER_OPTIONS);
@@ -586,13 +591,7 @@ export default function App() {
     }));
   };
 
-  const getStyleLabel = (value) => {
-    if (value < -60) return 'Authentic Chinese';
-    if (value < -20) return 'Chinese-leaning Fusion';
-    if (value <= 20) return 'Global Fusion';
-    if (value <= 60) return 'Western-leaning Fusion';
-    return 'Modern Western Style';
-  };
+  const getStyleLabel = (value) => value || 'Chinese';
 
   const getFlavorHealthLabel = (value) => {
     if (value <= 20) return 'Very light and health-focused';
@@ -613,19 +612,13 @@ export default function App() {
   };
 
   const getStyleInstruction = (styleLabel) => {
-    if (styleLabel === 'Authentic Chinese') {
-      return 'STYLE RULES: Keep the dishes fully Chinese in flavor, technique, naming, ingredient pairing, seasoning profile, and presentation. Do not westernize the dishes or blend in fusion elements. If a chineseName is provided, it must be written only in Traditional Chinese characters.';
+    if (styleLabel === 'Chinese') {
+      return 'STYLE RULES: authentic chinese, limited to top100 most popular hong kong household chinese dishes verified on the web. Keep the dishes fully Chinese in flavor, technique, naming, ingredient pairing, seasoning profile, and presentation. Do not westernize the dishes or blend in fusion elements. If a chineseName is provided, it must be written only in Traditional Chinese characters.';
     }
-    if (styleLabel === 'Chinese-leaning Fusion') {
-      return 'STYLE RULES: Keep the dishes clearly Chinese-led, with only light fusion influence. Chinese techniques, seasonings, and structure should dominate. If a chineseName is provided, it must be written only in Traditional Chinese characters.';
+    if (styleLabel === 'Japanese') {
+      return 'STYLE RULES: simple fusion japanese cooking that suit HK household taste and cooking style. Keep the dishes Japanese-led but practical for Hong Kong home cooking. Favor simple techniques, lighter seasoning structures, and everyday household-friendly combinations. If a chineseName is provided, it must be written only in Traditional Chinese characters.';
     }
-    if (styleLabel === 'Global Fusion') {
-      return 'STYLE RULES: Allow balanced cross-cultural fusion. The dish may combine Chinese and non-Chinese influences in a deliberate way. If a chineseName is provided, it must be written only in Traditional Chinese characters.';
-    }
-    if (styleLabel === 'Western-leaning Fusion') {
-      return 'STYLE RULES: Keep the dishes primarily Western in composition while still allowing some Chinese or Asian influence. The result should still read as intentional fusion. If a chineseName is provided, it must be written only in Traditional Chinese characters.';
-    }
-    return 'STYLE RULES: Generate fully Western dishes only. Do not make them fusion. Do not use Chinese naming, Chinese seasoning frameworks, wok-based Chinese technique, or Chinese dish structures unless explicitly requested elsewhere. If a chineseName is provided, it must be written only in Traditional Chinese characters.';
+    return 'STYLE RULES: western cooking that suit HK household taste and cooking style. Generate Western-led dishes that feel realistic and appealing for Hong Kong home cooking. Do not make them Chinese-led. Keep them practical, familiar, and household-friendly. If a chineseName is provided, it must be written only in Traditional Chinese characters.';
   };
 
   const buildPromptSection = (title, lines) => {
@@ -655,9 +648,6 @@ export default function App() {
     const flavorHealthInstruction = `FLAVOR VS HEALTH: ${flavorHealthBalance}/100 (${getFlavorHealthLabel(flavorHealthBalance)}). Reflect this balance in ingredient choices, cooking method, seasoning intensity, richness, and oil or sauce usage.`;
     const mealTypeInstruction = getMealTypeInstruction(mealType);
     const styleInstruction = getStyleInstruction(styleLabel);
-    const hkHouseholdInstruction = styleLabel === 'Authentic Chinese'
-      ? 'Because STYLE is Authentic Chinese, constrain every dish to the top 100 most common Hong Kong household dishes. Do not generate banquet dishes, restaurant-only dishes, or non-household fusion dishes.'
-      : '';
     const parameterSection = buildPromptSection('PARAMETERS', [
       `DISH_COUNT: ${dishCount}`,
       `DINER_COUNT: ${dinerCount}`,
@@ -677,7 +667,6 @@ export default function App() {
       styleInstruction,
       flavorHealthInstruction,
       toddlerInstruction,
-      hkHouseholdInstruction,
       cookingTipsInstruction
     ]);
     const outputSection = buildPromptSection('OUTPUT REQUIREMENTS', [
@@ -1354,7 +1343,32 @@ export default function App() {
         <div className={`grid ${isMobileLayout ? 'gap-4 grid-cols-1' : 'gap-6 grid-cols-3'}`}>
           <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4"><div className="flex items-center justify-between"><label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Dishes</label><span className="text-[24px] font-semibold text-[#111111]">{dishCount}</span></div><input type="range" min="1" max="6" step="1" value={dishCount} onChange={(e) => setDishCount(parseInt(e.target.value, 10))} className={trackClass} /><div className="flex justify-between text-[12px] text-[#6B7280]"><span>Light spread</span><span>Full table</span></div></div>
           <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4"><div className="flex items-center justify-between"><label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Diners</label><span className="text-[24px] font-semibold text-[#111111]">{dinerCount}</span></div><input type="range" min="2" max="8" step="1" value={dinerCount} onChange={(e) => setDinerCount(parseInt(e.target.value, 10))} className={trackClass} /><div className="flex justify-between text-[12px] text-[#6B7280]"><span>Smaller meal</span><span>Group dinner</span></div></div>
-          <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4"><div className="flex items-center justify-between gap-4"><label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Flavor Weight</label><span className="rounded-full bg-[rgba(17,17,17,0.05)] px-3 py-1 text-[12px] font-medium text-[#111111]">{getStyleLabel(styleWeight)}</span></div><input type="range" min="-100" max="100" step="20" value={styleWeight} onChange={(e) => setStyleWeight(parseInt(e.target.value, 10))} className="w-full cursor-pointer accent-[#111111]" /><div className="flex justify-between text-[12px] text-[#6B7280]"><span>Classic</span><span>Global</span><span>Bold</span></div></div>
+          <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4">
+            <div className="flex items-center justify-between gap-4">
+              <label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Style</label>
+              <span className="rounded-full bg-[rgba(17,17,17,0.05)] px-3 py-1 text-[12px] font-medium text-[#111111]">{getStyleLabel(styleWeight)}</span>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {STYLE_OPTIONS.map((option) => {
+                const isSelected = styleWeight === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setStyleWeight(option.value)}
+                    className={`flex items-center gap-3 rounded-[10px] border px-4 py-3 text-left text-[14px] font-medium transition duration-200 ease-out ${
+                      isSelected
+                        ? 'border-[#111111] bg-white text-[#111111] shadow-[0_8px_20px_rgba(17,17,17,0.08)]'
+                        : 'border-[#E5E7EB] bg-white text-[#6B7280] hover:border-[#D1D5DB] hover:bg-[#FCFCFD] hover:text-[#111111]'
+                    }`}
+                  >
+                    <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${isSelected ? 'bg-[#16A34A]' : 'bg-[#DC2626]'}`} />
+                    <span>{option.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </section>
       <div className={`grid ${isMobileLayout ? 'gap-3 grid-cols-1' : 'gap-5 grid-cols-2'}`}>
