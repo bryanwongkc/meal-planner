@@ -1569,8 +1569,7 @@ export default function App() {
         <div className={`${isMobileLayout ? 'mb-4' : 'mb-6'} flex items-center gap-3`}>
           <div className={`${isMobileLayout ? 'rounded-[8px] p-2' : 'rounded-[10px] p-2.5'} bg-[rgba(17,17,17,0.05)] text-[#111111]`}><LayoutGrid size={isMobileLayout ? 14 : 16} /></div>
           <div>
-            <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#9CA3AF]">Meal Profile</p>
-            <h3 className={`${isMobileLayout ? 'text-[20px]' : 'text-[22px]'} font-semibold tracking-[-0.02em] text-[#111111]`}>Meal Profile</h3>
+            <p className={`${isMobileLayout ? 'text-[16px]' : 'text-[18px]'} font-medium uppercase tracking-[0.14em] text-[#9CA3AF]`}>Meal Profile</p>
           </div>
         </div>
         <div className={`grid ${isMobileLayout ? 'gap-4 grid-cols-1' : 'gap-6 grid-cols-3'}`}>
@@ -1706,8 +1705,7 @@ export default function App() {
         <div className={`${isMobileLayout ? 'mb-4' : 'mb-6'} flex items-center gap-3`}>
           <div className={`${isMobileLayout ? 'rounded-[8px] p-2' : 'rounded-[10px] p-2.5'} bg-[rgba(17,17,17,0.05)] text-[#111111]`}><Settings2 size={isMobileLayout ? 14 : 16} /></div>
           <div>
-            <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#9CA3AF]">Kitchen Settings</p>
-            <h3 className={`${isMobileLayout ? 'text-[20px]' : 'text-[22px]'} font-semibold tracking-[-0.02em] text-[#111111]`}>Kitchen Settings</h3>
+            <p className={`${isMobileLayout ? 'text-[16px]' : 'text-[18px]'} font-medium uppercase tracking-[0.14em] text-[#9CA3AF]`}>Kitchen Settings</p>
           </div>
         </div>
         <div className={isMobileLayout ? 'space-y-4' : 'space-y-5'}>
