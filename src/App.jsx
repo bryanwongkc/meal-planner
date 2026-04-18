@@ -484,6 +484,8 @@ export default function App() {
   const hasLoadedWeeklyPlannerRef = useRef(false);
   const lastSyncedWeeklyPlannerRef = useRef(JSON.stringify(createEmptyWeeklyPlanner()));
   const hasInitializedFamilySelectionRef = useRef(false);
+  const hasLoadedDinerStateRef = useRef(false);
+  const lastSyncedDinerStateRef = useRef('');
 
   const isMobileLayout = layoutMode === 'mobile';
   const trackClass = 'w-full cursor-pointer accent-[#111111]';
@@ -507,6 +509,60 @@ export default function App() {
       hasInitializedFamilySelectionRef.current = true;
     }
   }, [familyProfiles]);
+
+  useEffect(() => {
+    const dinerStateRef = doc(db, 'planner', 'diners');
+
+    const unsubscribe = onSnapshot(dinerStateRef, async (snapshot) => {
+      if (!snapshot.exists()) {
+        const defaultState = {
+          mode: 'general',
+          dinerCount: 3,
+          selectedFamilyProfileIds: []
+        };
+        await setDoc(dinerStateRef, {
+          ...defaultState,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        lastSyncedDinerStateRef.current = JSON.stringify(defaultState);
+        return;
+      }
+
+      const data = snapshot.data() || {};
+      const normalizedState = {
+        mode: data.mode === 'family' ? 'family' : 'general',
+        dinerCount: Number.isFinite(data.dinerCount) ? data.dinerCount : 3,
+        selectedFamilyProfileIds: Array.isArray(data.selectedFamilyProfileIds) ? data.selectedFamilyProfileIds.filter(Boolean) : []
+      };
+
+      setIsFamilyMode(normalizedState.mode === 'family');
+      setDinerCount(normalizedState.dinerCount);
+      setSelectedFamilyProfileIds(normalizedState.selectedFamilyProfileIds);
+      hasInitializedFamilySelectionRef.current = true;
+      lastSyncedDinerStateRef.current = JSON.stringify(normalizedState);
+      hasLoadedDinerStateRef.current = true;
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedDinerStateRef.current) return;
+
+    const dinerState = {
+      mode: isFamilyMode ? 'family' : 'general',
+      dinerCount,
+      selectedFamilyProfileIds
+    };
+    const serializedDinerState = JSON.stringify(dinerState);
+    if (serializedDinerState === lastSyncedDinerStateRef.current) return;
+
+    lastSyncedDinerStateRef.current = serializedDinerState;
+    setDoc(doc(db, 'planner', 'diners'), {
+      ...dinerState,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  }, [isFamilyMode, dinerCount, selectedFamilyProfileIds]);
 
   const filteredSavedRecipes = recipes.filter((recipe) => {
     const matchesMealType = savedMealFilter === 'All' || recipe.mealType?.toLowerCase() === savedMealFilter.toLowerCase();
