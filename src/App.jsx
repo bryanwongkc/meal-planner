@@ -497,6 +497,7 @@ export default function App() {
   const fiberDropdownOptions = [...fiberOptions, 'CUSTOM_VAL'];
   const selectedFamilyProfiles = familyProfiles.filter((profile) => selectedFamilyProfileIds.includes(profile.id));
   const activeDinerCount = isFamilyMode ? Math.max(selectedFamilyProfiles.length, 1) : dinerCount;
+  const hasToddlerFamilyProfile = selectedFamilyProfiles.some((profile) => ['baby', 'young-boy', 'young-girl'].includes(profile.icon));
   const selectedFamilyDietaryRequirements = selectedFamilyProfiles
     .map((profile) => `${profile.name}: ${profile.dietaryRequirements?.trim() || 'None'}`)
     .filter(Boolean);
@@ -509,6 +510,12 @@ export default function App() {
       hasInitializedFamilySelectionRef.current = true;
     }
   }, [familyProfiles]);
+
+  useEffect(() => {
+    if (isFamilyMode && hasToddlerFamilyProfile) {
+      setIsToddlerFriendly(true);
+    }
+  }, [isFamilyMode, hasToddlerFamilyProfile]);
 
   useEffect(() => {
     const dinerStateRef = doc(db, 'planner', 'diners');
