@@ -456,6 +456,7 @@ export default function App() {
   const [mealType, setMealType] = useState(MEAL_TYPES[2]);
   const [todayPreference, setTodayPreference] = useState('');
   const [location, setLocation] = useState(LOCATIONS[0].value);
+  const [isKitchenSettingsExpanded, setIsKitchenSettingsExpanded] = useState(false);
   const [newRuleInput, setNewRuleInput] = useState('');
   const [editingRuleId, setEditingRuleId] = useState(null);
   const [familyProfileName, setFamilyProfileName] = useState('');
@@ -1547,7 +1548,40 @@ export default function App() {
           </div>
         </div>
         <div className={`grid ${isMobileLayout ? 'gap-4 grid-cols-1' : 'gap-6 grid-cols-3'}`}>
-          <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4"><div className="flex items-center justify-between"><label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Dishes</label><span className="text-[24px] font-semibold text-[#111111]">{dishCount}</span></div><input type="range" min="1" max="6" step="1" value={dishCount} onChange={(e) => setDishCount(parseInt(e.target.value, 10))} className={trackClass} /><div className="flex justify-between text-[12px] text-[#6B7280]"><span>Light spread</span><span>Full table</span></div></div>
+          <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4">
+            <div className="flex items-center justify-between">
+              <label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]"># Of Dishes</label>
+              <span className="text-[24px] font-semibold text-[#111111]">{dishCount}</span>
+            </div>
+            <input type="range" min="1" max="6" step="1" value={dishCount} onChange={(e) => setDishCount(parseInt(e.target.value, 10))} className={trackClass} />
+            <div className="flex justify-between text-[12px] text-[#6B7280]"><span>Light spread</span><span>Full table</span></div>
+            <div className="border-t border-[#E5E7EB] pt-3">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Cuisine Style</label>
+                <span className="rounded-full bg-[rgba(17,17,17,0.05)] px-3 py-1 text-[12px] font-medium text-[#111111]">{getStyleLabel(styleWeight)}</span>
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                {STYLE_OPTIONS.map((option) => {
+                  const isSelected = styleWeight === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setStyleWeight(option.value)}
+                      className={`flex items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left text-[13px] font-medium transition duration-200 ease-out ${
+                        isSelected
+                          ? 'border-[#111111] bg-white text-[#111111] shadow-[0_8px_20px_rgba(17,17,17,0.08)]'
+                          : 'border-[#E5E7EB] bg-white text-[#6B7280] hover:border-[#D1D5DB] hover:bg-[#FCFCFD] hover:text-[#111111]'
+                      }`}
+                    >
+                      <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${isSelected ? 'bg-[#16A34A]' : 'bg-[#DC2626]'}`} />
+                      <span>{option.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
           <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -1613,29 +1647,27 @@ export default function App() {
             )}
           </div>
           <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4">
-            <div className="flex items-center justify-between gap-4">
-              <label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Style</label>
-              <span className="rounded-full bg-[rgba(17,17,17,0.05)] px-3 py-1 text-[12px] font-medium text-[#111111]">{getStyleLabel(styleWeight)}</span>
-            </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-              {STYLE_OPTIONS.map((option) => {
-                const isSelected = styleWeight === option.value;
-                return (
+            <div className="space-y-2">
+              <label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Meal Type</label>
+              <div className="grid grid-cols-1 gap-2">
+                {MEAL_TYPES.map((type) => (
                   <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setStyleWeight(option.value)}
-                    className={`flex items-center gap-3 rounded-[10px] border px-4 py-3 text-left text-[14px] font-medium transition duration-200 ease-out ${
-                      isSelected
-                        ? 'border-[#111111] bg-white text-[#111111] shadow-[0_8px_20px_rgba(17,17,17,0.08)]'
-                        : 'border-[#E5E7EB] bg-white text-[#6B7280] hover:border-[#D1D5DB] hover:bg-[#FCFCFD] hover:text-[#111111]'
+                    key={type}
+                    onClick={() => setMealType(type)}
+                    className={`rounded-[10px] px-3 py-2.5 text-left text-[13px] font-medium transition duration-200 ease-out ${
+                      mealType === type ? 'bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)]' : 'border border-[#E5E7EB] bg-white text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'
                     }`}
                   >
-                    <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${isSelected ? 'bg-[#16A34A]' : 'bg-[#DC2626]'}`} />
-                    <span>{option.label}</span>
+                    {type}
                   </button>
-                );
-              })}
+                ))}
+              </div>
+            </div>
+            <div className="border-t border-[#E5E7EB] pt-3">
+              <label className="mb-2 block text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Supply Source</label>
+              <select value={location} onChange={(e) => setLocation(e.target.value)} className={selectClass}>
+                {LOCATIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
             </div>
           </div>
         </div>
@@ -1653,62 +1685,61 @@ export default function App() {
           </div>
         </div>
         <div className={isMobileLayout ? 'space-y-4' : 'space-y-5'}>
-          <div className="space-y-2">
-            <label className="text-[12px] font-medium text-[#6B7280]">Meal Type</label>
-            <div className="flex rounded-[10px] border border-[#E5E7EB] bg-[#F7F8FA] p-1">
-              {MEAL_TYPES.map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setMealType(type)}
-                  className={`flex-1 rounded-lg px-4 py-2.5 text-[13px] font-medium transition duration-200 ease-out ${
-                    mealType === type ? 'bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)]' : 'text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
+          <button
+            type="button"
+            onClick={() => setIsKitchenSettingsExpanded((value) => !value)}
+            className="flex w-full items-center justify-between rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] px-4 py-3 text-left transition duration-200 ease-out hover:bg-white"
+          >
+            <span>
+              <span className="block text-[14px] font-medium text-[#111111]">Additional Kitchen Settings</span>
+              <span className="mt-1 block text-[12px] text-[#6B7280]">Flavor vs health, service mode, and preference notes</span>
+            </span>
+            <ChevronDown size={16} className={`text-[#6B7280] transition duration-200 ease-out ${isKitchenSettingsExpanded ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isKitchenSettingsExpanded ? (
+            <div className="space-y-5 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <label className="text-[12px] font-medium text-[#6B7280]">Flavor vs Health</label>
+                  <span className="rounded-full bg-[rgba(17,17,17,0.05)] px-3 py-1 text-[12px] font-medium text-[#111111]">{getFlavorHealthLabel(flavorHealthBalance)}</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="10"
+                  value={flavorHealthBalance}
+                  onChange={(e) => setFlavorHealthBalance(parseInt(e.target.value, 10))}
+                  className="w-full cursor-pointer accent-[#111111]"
+                />
+                <div className="flex items-center justify-between text-[12px] text-[#6B7280]">
+                  <span>Healthier / lighter</span>
+                  <span>{flavorHealthBalance}</span>
+                  <span>Richer / flavorful</span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div><p className="text-[15px] font-medium text-[#111111]">Service Mode</p><p className="text-[13px] text-[#6B7280]">Switch toddler-safe guidance on or off.</p></div>
+                <div className="flex items-center rounded-[10px] border border-[#E5E7EB] bg-white p-1">
+                  <button onClick={() => setIsToddlerFriendly(false)} className={`rounded-lg px-4 py-2.5 text-[13px] font-medium transition duration-200 ease-out ${!isToddlerFriendly ? 'bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)]' : 'text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'}`}>Adults Only</button>
+                  <button onClick={() => setIsToddlerFriendly(true)} className={`flex items-center rounded-lg px-4 py-2.5 text-[13px] font-medium transition duration-200 ease-out ${isToddlerFriendly ? 'bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)]' : 'text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'}`}><Baby size={12} className="mr-1.5" />Toddler</button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[12px] font-medium text-[#6B7280]">Today Preference</label>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="e.g. soupy, light, comforting, crispy..."
+                    className={inputClass}
+                    value={todayPreference}
+                    onChange={(e) => setTodayPreference(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-4">
-              <label className="text-[12px] font-medium text-[#6B7280]">Flavor vs Health</label>
-              <span className="rounded-full bg-[rgba(17,17,17,0.05)] px-3 py-1 text-[12px] font-medium text-[#111111]">{getFlavorHealthLabel(flavorHealthBalance)}</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="10"
-              value={flavorHealthBalance}
-              onChange={(e) => setFlavorHealthBalance(parseInt(e.target.value, 10))}
-              className="w-full cursor-pointer accent-[#111111]"
-            />
-            <div className="flex items-center justify-between text-[12px] text-[#6B7280]">
-              <span>Healthier / lighter</span>
-              <span>{flavorHealthBalance}</span>
-              <span>Richer / flavorful</span>
-            </div>
-          </div>
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div><p className="text-[15px] font-medium text-[#111111]">Service Mode</p><p className="text-[13px] text-[#6B7280]">Switch toddler-safe guidance on or off.</p></div>
-            <div className="flex items-center rounded-[10px] border border-[#E5E7EB] bg-[#F7F8FA] p-1">
-              <button onClick={() => setIsToddlerFriendly(false)} className={`rounded-lg px-4 py-2.5 text-[13px] font-medium transition duration-200 ease-out ${!isToddlerFriendly ? 'bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)]' : 'text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'}`}>Adults Only</button>
-              <button onClick={() => setIsToddlerFriendly(true)} className={`flex items-center rounded-lg px-4 py-2.5 text-[13px] font-medium transition duration-200 ease-out ${isToddlerFriendly ? 'bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)]' : 'text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'}`}><Baby size={12} className="mr-1.5" />Toddler</button>
-            </div>
-          </div>
-          <div className="space-y-2"><label className="text-[12px] font-medium text-[#6B7280]">Supply Source</label><select value={location} onChange={(e) => setLocation(e.target.value)} className={selectClass}>{LOCATIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
-          <div className="space-y-2">
-            <label className="text-[12px] font-medium text-[#6B7280]">Today Preference</label>
-            <div>
-              <input
-                type="text"
-                placeholder="e.g. soupy, light, comforting, crispy..."
-                className={inputClass}
-                value={todayPreference}
-                onChange={(e) => setTodayPreference(e.target.value)}
-              />
-            </div>
-          </div>
+          ) : null}
         </div>
       </section>
     </div>
