@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Baby, ChefHat, ChevronDown, CheckSquare, Clock, Flame, LayoutGrid, Loader2, Menu, Monitor,
+  Baby, ChefHat, ChevronDown, CheckSquare, Clock, Clock3, Flame, LayoutGrid, Loader2, Mars, Menu, Monitor,
   MessageSquareMore, PersonStanding, Plus, RefreshCcw, Settings2, ShieldCheck, Smartphone, Sparkles, Star,
-  Trash2, Undo2, User, UserRound, Users, XCircle
+  Trash2, Undo2, User, UserRound, Users, Venus, XCircle
 } from 'lucide-react';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase/config';
@@ -20,12 +20,12 @@ const STYLE_OPTIONS = [
 ];
 const FAMILY_ICON_OPTIONS = [
   { value: 'baby', label: 'Baby', icon: Baby },
-  { value: 'young-boy', label: 'Young Boy', icon: User },
-  { value: 'young-girl', label: 'Young Girl', icon: UserRound },
-  { value: 'man', label: 'Man', icon: PersonStanding },
-  { value: 'woman', label: 'Woman', icon: UserRound },
-  { value: 'old-man', label: 'Old Man', icon: Users },
-  { value: 'old-woman', label: 'Old Woman', icon: Users }
+  { value: 'young-boy', label: 'Young Boy', icon: User, badgeIcon: Mars },
+  { value: 'young-girl', label: 'Young Girl', icon: UserRound, badgeIcon: Venus },
+  { value: 'man', label: 'Man', icon: PersonStanding, badgeIcon: Mars },
+  { value: 'woman', label: 'Woman', icon: UserRound, badgeIcon: Venus },
+  { value: 'old-man', label: 'Old Man', icon: PersonStanding, badgeIcon: Clock3 },
+  { value: 'old-woman', label: 'Old Woman', icon: UserRound, badgeIcon: Clock3 }
 ];
 const DEFAULT_DIETARY_RULES = [
   { id: 'no-spicy', text: 'No Spicy Food', order: 0 },
@@ -72,6 +72,22 @@ function Section({ title, icon, children, compact = false }) {
       </div>
       {children}
     </section>
+  );
+}
+
+function FamilyIconGlyph({ option, size = 16, badgeSize = 10 }) {
+  const PrimaryIcon = option.icon;
+  const BadgeIcon = option.badgeIcon;
+
+  return (
+    <span className="relative inline-flex">
+      <PrimaryIcon size={size} />
+      {BadgeIcon ? (
+        <span className="absolute -bottom-1 -right-1 rounded-full border border-white bg-white p-[1px] text-[#6B7280] shadow-[0_2px_6px_rgba(17,17,17,0.08)]">
+          <BadgeIcon size={badgeSize} />
+        </span>
+      ) : null}
+    </span>
   );
 }
 
@@ -1478,7 +1494,7 @@ export default function App() {
             </div>
             {isFamilyMode ? (
               familyProfiles.length > 0 ? (
-                <div className="space-y-2">
+                <div className={`grid gap-2 ${isMobileLayout ? 'grid-cols-2' : 'grid-cols-3'}`}>
                   {familyProfiles.map((profile) => {
                     const iconOption = getFamilyProfileIcon(profile.icon);
                     const isSelected = selectedFamilyProfileIds.includes(profile.id);
@@ -1487,16 +1503,13 @@ export default function App() {
                         key={profile.id}
                         type="button"
                         onClick={() => toggleFamilyProfileSelection(profile.id)}
-                        className={`flex w-full items-center justify-between gap-3 rounded-[10px] border px-3 py-3 text-left transition duration-200 ease-out ${isSelected ? 'border-[#111111] bg-white shadow-[0_8px_20px_rgba(17,17,17,0.08)]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'}`}
+                        className={`flex w-full items-center justify-between gap-2 rounded-[10px] border px-3 py-2.5 text-left transition duration-200 ease-out ${isSelected ? 'border-[#111111] bg-white shadow-[0_8px_20px_rgba(17,17,17,0.08)]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'}`}
                       >
-                        <span className="flex min-w-0 items-center gap-3">
-                          <span className="rounded-[8px] bg-[rgba(17,17,17,0.05)] p-2 text-[#111111]">
-                            {React.createElement(iconOption.icon, { size: 14 })}
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="rounded-[8px] bg-[rgba(17,17,17,0.05)] p-1.5 text-[#111111]">
+                            <FamilyIconGlyph option={iconOption} size={14} badgeSize={8} />
                           </span>
-                          <span className="min-w-0">
-                            <span className="block break-words text-[14px] font-medium text-[#111111]">{profile.name}</span>
-                            <span className="block break-words text-[12px] text-[#6B7280]">{profile.dietaryRequirements?.trim() || 'No dietary requirements'}</span>
-                          </span>
+                          <span className="min-w-0 break-words text-[13px] font-medium text-[#111111]">{profile.name}</span>
                         </span>
                         <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${isSelected ? 'bg-[#16A34A]' : 'bg-[#DC2626]'}`} />
                       </button>
@@ -1681,7 +1694,7 @@ export default function App() {
                             : 'border-[#E5E7EB] bg-white text-[#6B7280] hover:border-[#D1D5DB] hover:text-[#111111]'
                         }`}
                       >
-                        {React.createElement(option.icon, { size: 16 })}
+                        <FamilyIconGlyph option={option} size={16} badgeSize={9} />
                         <span className="text-[13px] font-medium">{option.label}</span>
                       </button>
                     );
@@ -1718,7 +1731,7 @@ export default function App() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex items-start gap-3">
                       <div className="rounded-[10px] bg-[rgba(17,17,17,0.05)] p-2.5 text-[#111111]">
-                        {React.createElement(profileIcon.icon, { size: 16 })}
+                        <FamilyIconGlyph option={profileIcon} size={16} badgeSize={9} />
                       </div>
                       <div className="min-w-0">
                         <h3 className="break-words text-[16px] font-semibold text-[#111111]">{profile.name}</h3>
