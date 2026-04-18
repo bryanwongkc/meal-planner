@@ -258,6 +258,19 @@ const buildSavedRecipePayload = (recipe, mealType) => ({
   ...recipe
 });
 
+const getNutritionSummary = (recipe) => {
+  if (!recipe?.nutrition) return [];
+
+  const entries = [
+    recipe.nutrition.calories ? `${recipe.nutrition.calories} kcal` : null,
+    recipe.nutrition.protein ? `${recipe.nutrition.protein} protein` : null,
+    recipe.nutrition.carbs ? `${recipe.nutrition.carbs} carbs` : null,
+    recipe.nutrition.fat ? `${recipe.nutrition.fat} fat` : null
+  ].filter(Boolean);
+
+  return entries;
+};
+
 const getRecipeTitle = (recipe, mealType) => buildSavedRecipePayload(recipe, mealType).title;
 
 const useRecipes = () => {
@@ -834,6 +847,7 @@ export default function App() {
       ? "Include a 'toddlerAdaptation' string for each dish."
       : "Do not include toddlerAdaptation.";
     const cookingTipsInstruction = 'Include 3 to 5 short, practical, actionable cookingTips for each dish.';
+    const nutritionInstruction = 'Include a nutrition object for each dish with basic estimated values: calories, protein, carbs, and fat. Keep them short human-readable strings such as "520", "32g", "18g", "24g".';
     const flavorHealthInstruction = `FLAVOR VS HEALTH: ${flavorHealthBalance}/100 (${getFlavorHealthLabel(flavorHealthBalance)}). Reflect this balance in ingredient choices, cooking method, seasoning intensity, richness, and oil or sauce usage.`;
     const mealTypeInstruction = getMealTypeInstruction(mealType);
     const styleInstruction = getStyleInstruction(styleLabel);
@@ -874,12 +888,14 @@ export default function App() {
       familyModeInstruction,
       ingredientFallbackInstruction,
       toddlerInstruction,
-      cookingTipsInstruction
+      cookingTipsInstruction,
+      nutritionInstruction
     ]);
     const outputSection = buildPromptSection('OUTPUT REQUIREMENTS', [
       `Return exactly ${dishCount} recipe objects as JSON.`,
       'Each recipe must match the requested meal type, style, and dietary constraints.',
       'Honor the ingredient selection rules above when deciding whether to use provided ingredients or propose missing ones.',
+      'Include basic estimated nutrition details for each recipe.',
       'If chineseName is included, use Traditional Chinese only. Never use Simplified Chinese.',
       "Keep the response schema-compatible with the required JSON fields only."
     ]);
@@ -907,7 +923,7 @@ export default function App() {
       outputSection
     ].join('\n');
     setLastGeminiPrompt(prompt);
-    const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', responseSchema: { type: 'ARRAY', items: { type: 'OBJECT', properties: { name: { type: 'STRING' }, chineseName: { type: 'STRING' }, styleTag: { type: 'STRING' }, description: { type: 'STRING' }, prepTime: { type: 'STRING' }, cookTime: { type: 'STRING' }, ingredients: { type: 'ARRAY', items: { type: 'STRING' } }, instructions: { type: 'ARRAY', items: { type: 'STRING' } }, cookingTips: { type: 'ARRAY', items: { type: 'STRING' } }, toddlerAdaptation: { type: 'STRING' } }, required: ['name', 'styleTag', 'description', 'prepTime', 'cookTime', 'ingredients', 'instructions', 'cookingTips'] } } } };
+    const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', responseSchema: { type: 'ARRAY', items: { type: 'OBJECT', properties: { name: { type: 'STRING' }, chineseName: { type: 'STRING' }, styleTag: { type: 'STRING' }, description: { type: 'STRING' }, prepTime: { type: 'STRING' }, cookTime: { type: 'STRING' }, nutrition: { type: 'OBJECT', properties: { calories: { type: 'STRING' }, protein: { type: 'STRING' }, carbs: { type: 'STRING' }, fat: { type: 'STRING' } } }, ingredients: { type: 'ARRAY', items: { type: 'STRING' } }, instructions: { type: 'ARRAY', items: { type: 'STRING' } }, cookingTips: { type: 'ARRAY', items: { type: 'STRING' } }, toddlerAdaptation: { type: 'STRING' } }, required: ['name', 'styleTag', 'description', 'prepTime', 'cookTime', 'ingredients', 'instructions', 'cookingTips', 'nutrition'] } } } };
     const requestRecipes = async (modelName) => {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
       const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -1050,6 +1066,7 @@ export default function App() {
         `DESCRIPTION: ${recipeTuneTarget.description || 'None'}`,
         `PREP_TIME: ${recipeTuneTarget.prepTime || 'Unknown'}`,
         `COOK_TIME: ${recipeTuneTarget.cookTime || 'Unknown'}`,
+        `NUTRITION: ${recipeTuneTarget.nutrition ? JSON.stringify(recipeTuneTarget.nutrition) : 'None'}`,
         `INGREDIENTS: ${recipeTuneTarget.ingredients?.join(' | ') || 'None'}`,
         `INSTRUCTIONS: ${recipeTuneTarget.instructions?.join(' | ') || 'None'}`,
         `COOKING_TIPS: ${recipeTuneTarget.cookingTips?.join(' | ') || 'None'}`,
@@ -1065,7 +1082,7 @@ export default function App() {
         'Keep the recipe coherent and practical.',
         'Preserve the overall spirit of the original recipe unless the request clearly changes it.',
         'Use Traditional Chinese only if chineseName is included.',
-        'Return fields: name, chineseName, styleTag, description, prepTime, cookTime, ingredients, instructions, cookingTips, toddlerAdaptation.'
+        'Return fields: name, chineseName, styleTag, description, prepTime, cookTime, nutrition, ingredients, instructions, cookingTips, toddlerAdaptation.'
       ])
     ].join('\n');
 
@@ -1088,12 +1105,21 @@ export default function App() {
                 description: { type: 'STRING' },
                 prepTime: { type: 'STRING' },
                 cookTime: { type: 'STRING' },
+                nutrition: {
+                  type: 'OBJECT',
+                  properties: {
+                    calories: { type: 'STRING' },
+                    protein: { type: 'STRING' },
+                    carbs: { type: 'STRING' },
+                    fat: { type: 'STRING' }
+                  }
+                },
                 ingredients: { type: 'ARRAY', items: { type: 'STRING' } },
                 instructions: { type: 'ARRAY', items: { type: 'STRING' } },
                 cookingTips: { type: 'ARRAY', items: { type: 'STRING' } },
                 toddlerAdaptation: { type: 'STRING' }
               },
-              required: ['name', 'styleTag', 'description', 'prepTime', 'cookTime', 'ingredients', 'instructions', 'cookingTips']
+              required: ['name', 'styleTag', 'description', 'prepTime', 'cookTime', 'nutrition', 'ingredients', 'instructions', 'cookingTips']
             }
           }
         })
@@ -2354,6 +2380,11 @@ export default function App() {
                           <div className={`${isMobileLayout ? 'mt-3' : 'mt-5'} flex flex-wrap gap-2`}>
                             <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Clock size={12} className="mr-2 text-[#111111]" />{recipe.prepTime}</div>
                             <div className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]"><Flame size={12} className="mr-2 text-[#111111]" />{recipe.cookTime}</div>
+                            {getNutritionSummary(recipe).map((item) => (
+                              <div key={item} className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]">
+                                {item}
+                              </div>
+                            ))}
                           </div>
                           <div className={`${isMobileLayout ? 'mt-3' : 'mt-5'} flex`}>
                             <button
@@ -2674,6 +2705,11 @@ export default function App() {
                         {selectedSavedRecipe.cookTime}
                       </div>
                     )}
+                    {getNutritionSummary(selectedSavedRecipe).map((item) => (
+                      <div key={item} className="flex items-center rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-[12px] font-medium text-[#6B7280]">
+                        {item}
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <div className="grid min-w-0 gap-6 md:grid-cols-2">
