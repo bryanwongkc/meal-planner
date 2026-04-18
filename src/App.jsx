@@ -1255,7 +1255,7 @@ export default function App() {
 
   const buildWeeklyPlanShareText = () => (
     [
-      'CulinaFusion Weekly Plan',
+      'Daily Wok Weekly Plan',
       ...WEEK_DAYS.flatMap((day) => [
         '',
         day,
@@ -1326,7 +1326,7 @@ export default function App() {
     const groceryItems = groceryList.items || [];
 
     return [
-      'CulinaFusion Grocery List',
+      'Daily Wok Grocery List',
       `Generated: ${formatTimestamp(groceryList.generatedAt)}`,
       '',
       ...(groceryItems.length > 0 ? groceryItems.map((item) => `- ${item.label}`) : ['- No planned dishes yet'])
@@ -1339,7 +1339,7 @@ export default function App() {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: 'CulinaFusion Weekly Plan',
+          title: 'Daily Wok Weekly Plan',
           text: shareText
         });
         return;
@@ -1495,7 +1495,7 @@ export default function App() {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: 'CulinaFusion Grocery List',
+          title: 'Daily Wok Grocery List',
           text: groceryListText
         });
         return;
@@ -1570,7 +1570,7 @@ export default function App() {
           <div className={`${isMobileLayout ? 'rounded-[8px] p-2' : 'rounded-[10px] p-2.5'} bg-[rgba(17,17,17,0.05)] text-[#111111]`}><LayoutGrid size={isMobileLayout ? 14 : 16} /></div>
           <div>
             <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#9CA3AF]">Meal Profile</p>
-            <h3 className={`${isMobileLayout ? 'text-[18px]' : 'text-[20px]'} font-semibold tracking-[-0.02em] text-[#111111]`}>Set the structure of the meal</h3>
+            <h3 className={`${isMobileLayout ? 'text-[20px]' : 'text-[22px]'} font-semibold tracking-[-0.02em] text-[#111111]`}>Meal Profile</h3>
           </div>
         </div>
         <div className={`grid ${isMobileLayout ? 'gap-4 grid-cols-1' : 'gap-6 grid-cols-3'}`}>
@@ -1707,7 +1707,7 @@ export default function App() {
           <div className={`${isMobileLayout ? 'rounded-[8px] p-2' : 'rounded-[10px] p-2.5'} bg-[rgba(17,17,17,0.05)] text-[#111111]`}><Settings2 size={isMobileLayout ? 14 : 16} /></div>
           <div>
             <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#9CA3AF]">Kitchen Settings</p>
-            <h3 className={`${isMobileLayout ? 'text-[18px]' : 'text-[20px]'} font-semibold tracking-[-0.02em] text-[#111111]`}>Tune the output intelligently</h3>
+            <h3 className={`${isMobileLayout ? 'text-[20px]' : 'text-[22px]'} font-semibold tracking-[-0.02em] text-[#111111]`}>Kitchen Settings</h3>
           </div>
         </div>
         <div className={isMobileLayout ? 'space-y-4' : 'space-y-5'}>
@@ -2267,7 +2267,7 @@ export default function App() {
                 <Menu size={18} />
               </button>
               <div className={`rounded-[12px] border border-[rgba(255,255,255,0.75)] bg-[rgba(255,255,255,0.68)] text-[#111111] backdrop-blur-xl shadow-[0_8px_24px_rgba(17,17,17,0.06)] ${isMobileLayout ? 'p-2.5' : 'p-3'}`}><ChefHat size={isMobileLayout ? 22 : 28} /></div>
-              <div className="min-w-0"><h1 className={`break-words font-bold tracking-[-0.04em] text-[#111111] ${isMobileLayout ? 'text-[24px]' : 'text-[32px]'}`}>CulinaFusion</h1><p className="mt-1 text-[12px] text-[#6B7280]">Tailored gastronomy engine</p></div>
+              <div className="min-w-0"><h1 className={`break-words font-bold tracking-[-0.04em] text-[#111111] ${isMobileLayout ? 'text-[24px]' : 'text-[32px]'}`}>Daily Wok</h1></div>
             </div>
             <div className={`flex min-w-0 ${isMobileLayout ? 'justify-end' : 'flex-wrap items-center justify-end'} gap-3`}>
               <div className={`flex rounded-[10px] border border-[rgba(255,255,255,0.75)] bg-[rgba(255,255,255,0.68)] p-1 backdrop-blur-xl shadow-[0_8px_24px_rgba(17,17,17,0.06)] ${isMobileLayout ? 'scale-90 origin-top-right' : ''}`}>
@@ -2288,7 +2288,7 @@ export default function App() {
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">Navigate</p>
-                <h2 className="mt-1 text-[20px] font-semibold text-[#111111]">CulinaFusion</h2>
+                <h2 className="mt-1 text-[20px] font-semibold text-[#111111]">Daily Wok</h2>
               </div>
               <button
                 onClick={() => setIsNavOpen(false)}
