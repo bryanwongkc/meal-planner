@@ -168,18 +168,27 @@ function IngredientBlock({ title, items, options, type, dot, addIngredient, remo
         </div>
         <button onClick={() => addIngredient(type)} className={`flex ${compact ? 'h-8 w-8' : 'h-9 w-9'} items-center justify-center rounded-full bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)] transition duration-200 ease-out hover:-translate-y-[1px] hover:bg-[#1F2937] active:scale-[0.98]`} disabled={items.length >= 4}><Plus size={compact ? 13 : 14} /></button>
       </div>
-      <div className={compact ? 'space-y-2.5' : 'space-y-3'}>
-        {items.map((item, index) => (
-          <div key={`${type}-${index}`} className={`rounded-xl border border-[#E5E7EB] bg-white ${compact ? 'p-2.5' : 'p-3'}`}>
-            <div className="flex items-center gap-2">
-              <div className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
-              <IngredientOptionPicker item={item} options={options} type={type} index={index} updateIngredient={updateIngredient} deleteIngredientOption={deleteIngredientOption} />
-              <button onClick={() => removeIngredient(type, index)} className="rounded-[8px] p-1.5 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]" aria-label={`Remove selected ${title} item`}><Trash2 size={15} /></button>
+      {items.length === 0 ? (
+        <div className="rounded-[12px] border border-dashed border-[#D1D5DB] bg-[#F7F8FA] px-4 py-5 text-center">
+          <p className="text-[13px] font-medium text-[#111111]">I&apos;m feeling lucky</p>
+          <p className="mt-1 text-[12px] text-[#6B7280]">
+            Leave this blank and the chef will suggest {type === 'protein' ? 'proteins' : 'veggies'} for you.
+          </p>
+        </div>
+      ) : (
+        <div className={compact ? 'space-y-2.5' : 'space-y-3'}>
+          {items.map((item, index) => (
+            <div key={`${type}-${index}`} className={`rounded-xl border border-[#E5E7EB] bg-white ${compact ? 'p-2.5' : 'p-3'}`}>
+              <div className="flex items-center gap-2">
+                <div className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
+                <IngredientOptionPicker item={item} options={options} type={type} index={index} updateIngredient={updateIngredient} deleteIngredientOption={deleteIngredientOption} />
+                <button onClick={() => removeIngredient(type, index)} className="rounded-[8px] p-1.5 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]" aria-label={`Remove selected ${title} item`}><Trash2 size={15} /></button>
+              </div>
+              {item.value === 'CUSTOM_VAL' && <input type="text" placeholder={type === 'protein' ? 'Protein name...' : 'Veggie name...'} className={`${inputClass} mt-3`} value={item.customText} onChange={(e) => updateIngredient(type, index, 'customText', e.target.value)} onBlur={() => updateIngredient(type, index, 'commitCustom', item.customText)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); updateIngredient(type, index, 'commitCustom', item.customText); } }} />}
             </div>
-            {item.value === 'CUSTOM_VAL' && <input type="text" placeholder={type === 'protein' ? 'Protein name...' : 'Veggie name...'} className={`${inputClass} mt-3`} value={item.customText} onChange={(e) => updateIngredient(type, index, 'customText', e.target.value)} onBlur={() => updateIngredient(type, index, 'commitCustom', item.customText)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); updateIngredient(type, index, 'commitCustom', item.customText); } }} />}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </Section>
   );
 }
@@ -512,10 +521,8 @@ export default function App() {
   }, [familyProfiles]);
 
   useEffect(() => {
-    if (isFamilyMode && hasToddlerFamilyProfile) {
-      setIsToddlerFriendly(true);
-    }
-  }, [isFamilyMode, hasToddlerFamilyProfile]);
+    setIsToddlerFriendly(isFamilyMode ? hasToddlerFamilyProfile : false);
+  }, [isFamilyMode, hasToddlerFamilyProfile, dinerCount, selectedFamilyProfileIds]);
 
   useEffect(() => {
     const dinerStateRef = doc(db, 'planner', 'diners');
@@ -821,6 +828,7 @@ export default function App() {
     const activeRules = dietaryRules.map((rule) => rule.text);
     const finalProteins = proteins.map((p) => (p.value === 'CUSTOM_VAL' ? p.customText : p.value)).filter(Boolean);
     const finalFibers = fibers.map((f) => (f.value === 'CUSTOM_VAL' ? f.customText : f.value)).filter(Boolean);
+    const suggestedIngredientCount = Math.min(Math.max(activeDinerCount - 1, 1), 3);
     const toddlerInstruction = isToddlerFriendly
       ? "Include a 'toddlerAdaptation' string for each dish."
       : "Do not include toddlerAdaptation.";
@@ -831,6 +839,18 @@ export default function App() {
     const familyModeInstruction = isFamilyMode
       ? `FAMILY MODE RULES: The meal must serve exactly ${activeDinerCount} active family members. Respect these selected family dietary requirements: ${selectedFamilyDietaryRequirements.join('; ')}.`
       : '';
+    const ingredientFallbackInstruction = (() => {
+      if (finalProteins.length === 0 && finalFibers.length === 0) {
+        return `INGREDIENT SELECTION RULES: Both PROTEINS and VEGETABLES are blank. Propose up to ${suggestedIngredientCount} protein options and up to ${suggestedIngredientCount} vegetable options that fit the meal.`;
+      }
+      if (finalProteins.length === 0) {
+        return `INGREDIENT SELECTION RULES: PROTEINS is blank. Propose up to ${suggestedIngredientCount} protein options that fit the provided vegetables and the requested meal. Do not invent extra vegetables beyond the provided list unless absolutely necessary.`;
+      }
+      if (finalFibers.length === 0) {
+        return `INGREDIENT SELECTION RULES: VEGETABLES is blank. Propose up to ${suggestedIngredientCount} vegetable options that fit the provided proteins and the requested meal. Do not invent extra proteins beyond the provided list unless absolutely necessary.`;
+      }
+      return 'INGREDIENT SELECTION RULES: Use the provided proteins and vegetables as the primary anchors for the meal. Do not replace them with unrelated options unless required by dietary constraints.';
+    })();
     const parameterSection = buildPromptSection('PARAMETERS', [
       `DISH_COUNT: ${dishCount}`,
       `DINER_COUNT: ${activeDinerCount}`,
@@ -851,13 +871,14 @@ export default function App() {
       styleInstruction,
       flavorHealthInstruction,
       familyModeInstruction,
+      ingredientFallbackInstruction,
       toddlerInstruction,
       cookingTipsInstruction
     ]);
     const outputSection = buildPromptSection('OUTPUT REQUIREMENTS', [
       `Return exactly ${dishCount} recipe objects as JSON.`,
       'Each recipe must match the requested meal type, style, and dietary constraints.',
-      'Use the provided proteins and vegetables as primary anchors where practical.',
+      'Honor the ingredient selection rules above when deciding whether to use provided ingredients or propose missing ones.',
       'If chineseName is included, use Traditional Chinese only. Never use Simplified Chinese.',
       "Keep the response schema-compatible with the required JSON fields only."
     ]);
