@@ -1494,7 +1494,7 @@ export default function App() {
             </div>
             {isFamilyMode ? (
               familyProfiles.length > 0 ? (
-                <div className={`grid gap-2 ${isMobileLayout ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                <div className="grid grid-cols-2 gap-2">
                   {familyProfiles.map((profile) => {
                     const iconOption = getFamilyProfileIcon(profile.icon);
                     const isSelected = selectedFamilyProfileIds.includes(profile.id);
