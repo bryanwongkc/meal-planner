@@ -13,7 +13,6 @@ const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner'];
 const SAVED_FILTERS = ['All', ...MEAL_TYPES];
 const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const LOCATIONS = [{ value: 'supermarket', label: 'Supermarket' }, { value: 'wet market', label: 'Wet Market' }];
-const DIFFICULTIES = [{ value: 'Very Easy', label: 'Very Easy (Fusion/Western only)' }, { value: 'Easy', label: 'Easy' }, { value: 'Medium', label: 'Medium' }, { value: 'Hard', label: 'Hard' }];
 const STYLE_OPTIONS = [
   { value: 'Chinese', label: 'Chinese' },
   { value: 'Japanese', label: 'Japanese' },
@@ -399,7 +398,6 @@ export default function App() {
   const [mealType, setMealType] = useState(MEAL_TYPES[2]);
   const [todayPreference, setTodayPreference] = useState('');
   const [location, setLocation] = useState(LOCATIONS[0].value);
-  const [difficulty, setDifficulty] = useState(DIFFICULTIES[1].value);
   const [newRuleInput, setNewRuleInput] = useState('');
   const [editingRuleId, setEditingRuleId] = useState(null);
   const [generatedRecipes, setGeneratedRecipes] = useState([]);
@@ -656,7 +654,6 @@ export default function App() {
       `STYLE: ${styleLabel}`,
       `FLAVOR_HEALTH_BALANCE: ${flavorHealthBalance}/100 (${getFlavorHealthLabel(flavorHealthBalance)})`,
       `TODDLER_MODE: ${isToddlerFriendly ? 'ON' : 'OFF'}`,
-      `DIFFICULTY: ${difficulty}`,
       `SHOPPING_SOURCE: ${location}`,
       `PROTEINS: ${finalProteins.join(', ') || 'None'}`,
       `VEGETABLES: ${finalFibers.join(', ') || 'None'}`,
@@ -1427,10 +1424,7 @@ export default function App() {
               <button onClick={() => setIsToddlerFriendly(true)} className={`flex items-center rounded-lg px-4 py-2.5 text-[13px] font-medium transition duration-200 ease-out ${isToddlerFriendly ? 'bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)]' : 'text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'}`}><Baby size={12} className="mr-1.5" />Toddler</button>
             </div>
           </div>
-          <div className={`grid gap-4 ${isMobileLayout ? 'grid-cols-1' : 'grid-cols-2'}`}>
-            <div className="space-y-2"><label className="text-[12px] font-medium text-[#6B7280]">Technique Level</label><select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className={selectClass}>{DIFFICULTIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
-            <div className="space-y-2"><label className="text-[12px] font-medium text-[#6B7280]">Supply Source</label><select value={location} onChange={(e) => setLocation(e.target.value)} className={selectClass}>{LOCATIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
-          </div>
+          <div className="space-y-2"><label className="text-[12px] font-medium text-[#6B7280]">Supply Source</label><select value={location} onChange={(e) => setLocation(e.target.value)} className={selectClass}>{LOCATIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></div>
           <div className="space-y-2">
             <label className="text-[12px] font-medium text-[#6B7280]">Today Preference</label>
             <div>
