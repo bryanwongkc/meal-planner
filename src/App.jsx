@@ -419,6 +419,8 @@ export default function App() {
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [dishCount, setDishCount] = useState(3);
   const [dinerCount, setDinerCount] = useState(3);
+  const [isFamilyMode, setIsFamilyMode] = useState(false);
+  const [selectedFamilyProfileIds, setSelectedFamilyProfileIds] = useState([]);
   const [isToddlerFriendly, setIsToddlerFriendly] = useState(false);
   const [styleWeight, setStyleWeight] = useState('Chinese');
   const [flavorHealthBalance, setFlavorHealthBalance] = useState(50);
@@ -465,6 +467,7 @@ export default function App() {
   const longPressTimerRef = useRef(null);
   const hasLoadedWeeklyPlannerRef = useRef(false);
   const lastSyncedWeeklyPlannerRef = useRef(JSON.stringify(createEmptyWeeklyPlanner()));
+  const hasInitializedFamilySelectionRef = useRef(false);
 
   const isMobileLayout = layoutMode === 'mobile';
   const trackClass = 'w-full cursor-pointer accent-[#111111]';
@@ -474,6 +477,21 @@ export default function App() {
   const getRecipeById = (recipeId) => recipes.find((recipe) => recipe.id === recipeId);
   const proteinDropdownOptions = [...proteinOptions, 'CUSTOM_VAL'];
   const fiberDropdownOptions = [...fiberOptions, 'CUSTOM_VAL'];
+  const selectedFamilyProfiles = familyProfiles.filter((profile) => selectedFamilyProfileIds.includes(profile.id));
+  const activeDinerCount = isFamilyMode ? Math.max(selectedFamilyProfiles.length, 1) : dinerCount;
+  const selectedFamilyDietaryRequirements = selectedFamilyProfiles
+    .map((profile) => `${profile.name}: ${profile.dietaryRequirements?.trim() || 'None'}`)
+    .filter(Boolean);
+
+  useEffect(() => {
+    setSelectedFamilyProfileIds((current) => current.filter((id) => familyProfiles.some((profile) => profile.id === id)));
+
+    if (!hasInitializedFamilySelectionRef.current && familyProfiles.length > 0) {
+      setSelectedFamilyProfileIds(familyProfiles.map((profile) => profile.id));
+      hasInitializedFamilySelectionRef.current = true;
+    }
+  }, [familyProfiles]);
+
   const filteredSavedRecipes = recipes.filter((recipe) => {
     const matchesMealType = savedMealFilter === 'All' || recipe.mealType?.toLowerCase() === savedMealFilter.toLowerCase();
     const matchesSearch = !savedSearch.trim()
@@ -618,6 +636,13 @@ export default function App() {
     await deleteDoc(doc(db, 'familyProfiles', id));
     if (editingFamilyProfileId === id) cancelEditingFamilyProfile();
   };
+  const toggleFamilyProfileSelection = (profileId) => {
+    setSelectedFamilyProfileIds((current) => (
+      current.includes(profileId)
+        ? current.filter((id) => id !== profileId)
+        : [...current, profileId]
+    ));
+  };
   const getFamilyProfileIcon = (iconValue) => (
     FAMILY_ICON_OPTIONS.find((option) => option.value === iconValue) || FAMILY_ICON_OPTIONS[0]
   );
@@ -724,13 +749,18 @@ export default function App() {
     const flavorHealthInstruction = `FLAVOR VS HEALTH: ${flavorHealthBalance}/100 (${getFlavorHealthLabel(flavorHealthBalance)}). Reflect this balance in ingredient choices, cooking method, seasoning intensity, richness, and oil or sauce usage.`;
     const mealTypeInstruction = getMealTypeInstruction(mealType);
     const styleInstruction = getStyleInstruction(styleLabel);
+    const familyModeInstruction = isFamilyMode
+      ? `FAMILY MODE RULES: The meal must serve exactly ${activeDinerCount} active family members. Respect these selected family dietary requirements: ${selectedFamilyDietaryRequirements.join('; ')}.`
+      : '';
     const parameterSection = buildPromptSection('PARAMETERS', [
       `DISH_COUNT: ${dishCount}`,
-      `DINER_COUNT: ${dinerCount}`,
+      `DINER_COUNT: ${activeDinerCount}`,
       `MEAL_TYPE: ${mealType}`,
       `TODAY_PREFERENCE: ${todayPreference.trim() || 'None'}`,
       `STYLE: ${styleLabel}`,
       `FLAVOR_HEALTH_BALANCE: ${flavorHealthBalance}/100 (${getFlavorHealthLabel(flavorHealthBalance)})`,
+      `DINER_MODE: ${isFamilyMode ? 'Family Profiles' : 'General Slider'}`,
+      `FAMILY_DIETARY_REQUIREMENTS: ${selectedFamilyDietaryRequirements.join('; ') || 'None'}`,
       `TODDLER_MODE: ${isToddlerFriendly ? 'ON' : 'OFF'}`,
       `SHOPPING_SOURCE: ${location}`,
       `PROTEINS: ${finalProteins.join(', ') || 'None'}`,
@@ -741,6 +771,7 @@ export default function App() {
       mealTypeInstruction,
       styleInstruction,
       flavorHealthInstruction,
+      familyModeInstruction,
       toddlerInstruction,
       cookingTipsInstruction
     ]);
@@ -1417,7 +1448,73 @@ export default function App() {
         </div>
         <div className={`grid ${isMobileLayout ? 'gap-4 grid-cols-1' : 'gap-6 grid-cols-3'}`}>
           <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4"><div className="flex items-center justify-between"><label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Dishes</label><span className="text-[24px] font-semibold text-[#111111]">{dishCount}</span></div><input type="range" min="1" max="6" step="1" value={dishCount} onChange={(e) => setDishCount(parseInt(e.target.value, 10))} className={trackClass} /><div className="flex justify-between text-[12px] text-[#6B7280]"><span>Light spread</span><span>Full table</span></div></div>
-          <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4"><div className="flex items-center justify-between"><label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Diners</label><span className="text-[24px] font-semibold text-[#111111]">{dinerCount}</span></div><input type="range" min="2" max="8" step="1" value={dinerCount} onChange={(e) => setDinerCount(parseInt(e.target.value, 10))} className={trackClass} /><div className="flex justify-between text-[12px] text-[#6B7280]"><span>Smaller meal</span><span>Group dinner</span></div></div>
+          <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Diners</label>
+                <div className="text-[24px] font-semibold text-[#111111]">{activeDinerCount}</div>
+              </div>
+              <div className="flex rounded-[10px] border border-[#E5E7EB] bg-white p-1">
+                <button
+                  type="button"
+                  onClick={() => setIsFamilyMode(false)}
+                  className={`rounded-[8px] px-3 py-2 text-[11px] font-medium transition duration-200 ease-out ${!isFamilyMode ? 'bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)]' : 'text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'}`}
+                >
+                  General
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsFamilyMode(true);
+                    if (selectedFamilyProfileIds.length === 0 && familyProfiles.length > 0) {
+                      setSelectedFamilyProfileIds(familyProfiles.map((profile) => profile.id));
+                    }
+                  }}
+                  className={`rounded-[8px] px-3 py-2 text-[11px] font-medium transition duration-200 ease-out ${isFamilyMode ? 'bg-[#111111] text-white shadow-[0_8px_20px_rgba(17,17,17,0.16)]' : 'text-[#6B7280] hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]'}`}
+                >
+                  Family
+                </button>
+              </div>
+            </div>
+            {isFamilyMode ? (
+              familyProfiles.length > 0 ? (
+                <div className="space-y-2">
+                  {familyProfiles.map((profile) => {
+                    const iconOption = getFamilyProfileIcon(profile.icon);
+                    const isSelected = selectedFamilyProfileIds.includes(profile.id);
+                    return (
+                      <button
+                        key={profile.id}
+                        type="button"
+                        onClick={() => toggleFamilyProfileSelection(profile.id)}
+                        className={`flex w-full items-center justify-between gap-3 rounded-[10px] border px-3 py-3 text-left transition duration-200 ease-out ${isSelected ? 'border-[#111111] bg-white shadow-[0_8px_20px_rgba(17,17,17,0.08)]' : 'border-[#E5E7EB] bg-white hover:border-[#D1D5DB]'}`}
+                      >
+                        <span className="flex min-w-0 items-center gap-3">
+                          <span className="rounded-[8px] bg-[rgba(17,17,17,0.05)] p-2 text-[#111111]">
+                            {React.createElement(iconOption.icon, { size: 14 })}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block break-words text-[14px] font-medium text-[#111111]">{profile.name}</span>
+                            <span className="block break-words text-[12px] text-[#6B7280]">{profile.dietaryRequirements?.trim() || 'No dietary requirements'}</span>
+                          </span>
+                        </span>
+                        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${isSelected ? 'bg-[#16A34A]' : 'bg-[#DC2626]'}`} />
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-[10px] border border-dashed border-[#D1D5DB] bg-white px-4 py-5 text-[13px] text-[#6B7280]">
+                  No family profiles yet. Add them in the Family Profiles tab first.
+                </div>
+              )
+            ) : (
+              <>
+                <input type="range" min="2" max="8" step="1" value={dinerCount} onChange={(e) => setDinerCount(parseInt(e.target.value, 10))} className={trackClass} />
+                <div className="flex justify-between text-[12px] text-[#6B7280]"><span>Smaller meal</span><span>Group dinner</span></div>
+              </>
+            )}
+          </div>
           <div className="space-y-3 rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4">
             <div className="flex items-center justify-between gap-4">
               <label className="text-[12px] font-medium uppercase tracking-[0.08em] text-[#9CA3AF]">Style</label>
