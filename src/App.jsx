@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Baby, ChefHat, ChevronDown, CheckSquare, Clock, Flame, LayoutGrid, Loader2, Menu, Monitor,
-  MessageSquareMore, Plus, RefreshCcw, Settings2, ShieldCheck, Smartphone, Sparkles, Star,
-  Trash2, Undo2, Users, XCircle
+  MessageSquareMore, PersonStanding, Plus, RefreshCcw, Settings2, ShieldCheck, Smartphone, Sparkles, Star,
+  Trash2, Undo2, User, UserRound, Users, XCircle
 } from 'lucide-react';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase/config';
@@ -17,6 +17,15 @@ const STYLE_OPTIONS = [
   { value: 'Chinese', label: 'Chinese' },
   { value: 'Japanese', label: 'Japanese' },
   { value: 'Western', label: 'Western' }
+];
+const FAMILY_ICON_OPTIONS = [
+  { value: 'baby', label: 'Baby', icon: Baby },
+  { value: 'young-boy', label: 'Young Boy', icon: User },
+  { value: 'young-girl', label: 'Young Girl', icon: UserRound },
+  { value: 'man', label: 'Man', icon: PersonStanding },
+  { value: 'woman', label: 'Woman', icon: UserRound },
+  { value: 'old-man', label: 'Old Man', icon: Users },
+  { value: 'old-woman', label: 'Old Woman', icon: Users }
 ];
 const DEFAULT_DIETARY_RULES = [
   { id: 'no-spicy', text: 'No Spicy Food', order: 0 },
@@ -382,6 +391,28 @@ const useGroceryList = () => {
   return groceryList;
 };
 
+const useFamilyProfiles = () => {
+  const [profiles, setProfiles] = useState([]);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, 'familyProfiles'),
+      orderBy('createdAt', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setProfiles(snapshot.docs.map((profileDoc) => ({
+        id: profileDoc.id,
+        ...profileDoc.data()
+      })));
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  return profiles;
+};
+
 export default function App() {
   const [layoutMode, setLayoutMode] = useState(typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop');
   const [currentView, setCurrentView] = useState('main');
@@ -400,6 +431,10 @@ export default function App() {
   const [location, setLocation] = useState(LOCATIONS[0].value);
   const [newRuleInput, setNewRuleInput] = useState('');
   const [editingRuleId, setEditingRuleId] = useState(null);
+  const [familyProfileName, setFamilyProfileName] = useState('');
+  const [familyProfileIcon, setFamilyProfileIcon] = useState(FAMILY_ICON_OPTIONS[0].value);
+  const [familyProfileDietary, setFamilyProfileDietary] = useState('');
+  const [editingFamilyProfileId, setEditingFamilyProfileId] = useState(null);
   const [generatedRecipes, setGeneratedRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -407,6 +442,7 @@ export default function App() {
   const [lastGeminiPrompt, setLastGeminiPrompt] = useState('');
   const recipes = useRecipes();
   const dietaryRules = useDietaryRules();
+  const familyProfiles = useFamilyProfiles();
   const groceryList = useGroceryList();
   const [selectedSavedRecipe, setSelectedSavedRecipe] = useState(null);
   const [activeSavedRecipeActions, setActiveSavedRecipeActions] = useState(null);
@@ -543,6 +579,48 @@ export default function App() {
     await deleteDoc(doc(db, 'dietaryRules', id));
     if (editingRuleId === id) cancelEditingRule();
   };
+  const saveFamilyProfile = async () => {
+    if (!familyProfileName.trim()) return;
+
+    const payload = {
+      name: familyProfileName.trim(),
+      icon: familyProfileIcon,
+      dietaryRequirements: familyProfileDietary.trim()
+    };
+
+    if (editingFamilyProfileId) {
+      await updateDoc(doc(db, 'familyProfiles', editingFamilyProfileId), payload);
+    } else {
+      await addDoc(collection(db, 'familyProfiles'), {
+        ...payload,
+        createdAt: serverTimestamp()
+      });
+    }
+
+    setFamilyProfileName('');
+    setFamilyProfileIcon(FAMILY_ICON_OPTIONS[0].value);
+    setFamilyProfileDietary('');
+    setEditingFamilyProfileId(null);
+  };
+  const startEditingFamilyProfile = (profile) => {
+    setEditingFamilyProfileId(profile.id);
+    setFamilyProfileName(profile.name || '');
+    setFamilyProfileIcon(profile.icon || FAMILY_ICON_OPTIONS[0].value);
+    setFamilyProfileDietary(profile.dietaryRequirements || '');
+  };
+  const cancelEditingFamilyProfile = () => {
+    setEditingFamilyProfileId(null);
+    setFamilyProfileName('');
+    setFamilyProfileIcon(FAMILY_ICON_OPTIONS[0].value);
+    setFamilyProfileDietary('');
+  };
+  const removeFamilyProfile = async (id) => {
+    await deleteDoc(doc(db, 'familyProfiles', id));
+    if (editingFamilyProfileId === id) cancelEditingFamilyProfile();
+  };
+  const getFamilyProfileIcon = (iconValue) => (
+    FAMILY_ICON_OPTIONS.find((option) => option.value === iconValue) || FAMILY_ICON_OPTIONS[0]
+  );
   const addIngredient = (type) => {
     const entry = { value: type === 'protein' ? (proteinOptions[0] || DEFAULT_PROTEIN_OPTIONS[0]) : (fiberOptions[0] || DEFAULT_FIBER_OPTIONS[0]), customText: '' };
     if (type === 'protein' && proteins.length < 4) setProteins([...proteins, entry]);
@@ -1473,6 +1551,107 @@ export default function App() {
     </Section>
   );
 
+  const familyProfilesContent = (
+    <section className={`min-w-0 ${isMobileLayout ? 'space-y-3' : 'space-y-5'} pb-20 pt-2`}>
+      <Section title="Family Profiles" icon={Users} compact={isMobileLayout}>
+        <div className={isMobileLayout ? 'space-y-4' : 'space-y-5'}>
+          <div className="rounded-[12px] border border-[#E5E7EB] bg-[#F7F8FA] p-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[12px] font-medium text-[#6B7280]">Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Grandma, Kai, Baby Emma..."
+                  className={inputClass}
+                  value={familyProfileName}
+                  onChange={(e) => setFamilyProfileName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && saveFamilyProfile()}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[12px] font-medium text-[#6B7280]">Icon</label>
+                <div className={`grid gap-2 ${isMobileLayout ? 'grid-cols-2' : 'grid-cols-4'}`}>
+                  {FAMILY_ICON_OPTIONS.map((option) => {
+                    const isSelected = familyProfileIcon === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setFamilyProfileIcon(option.value)}
+                        className={`flex items-center gap-3 rounded-[10px] border px-3 py-3 text-left transition duration-200 ease-out ${
+                          isSelected
+                            ? 'border-[#111111] bg-white text-[#111111] shadow-[0_8px_20px_rgba(17,17,17,0.08)]'
+                            : 'border-[#E5E7EB] bg-white text-[#6B7280] hover:border-[#D1D5DB] hover:text-[#111111]'
+                        }`}
+                      >
+                        {React.createElement(option.icon, { size: 16 })}
+                        <span className="text-[13px] font-medium">{option.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[12px] font-medium text-[#6B7280]">Dietary Requirements</label>
+                <textarea
+                  className="min-h-[112px] w-full rounded-[10px] border border-[#E5E7EB] bg-white p-4 text-[15px] text-[#111111] outline-none placeholder:text-[#9CA3AF] focus:border-[#111111] focus:ring-2 focus:ring-[rgba(17,17,17,0.10)]"
+                  placeholder="e.g. no spicy food, low sodium, toddler-safe textures..."
+                  value={familyProfileDietary}
+                  onChange={(e) => setFamilyProfileDietary(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button onClick={saveFamilyProfile} className={primaryButtonClass}>
+                  {editingFamilyProfileId ? 'Save Profile' : 'Add Profile'}
+                </button>
+                {editingFamilyProfileId ? (
+                  <button onClick={cancelEditingFamilyProfile} className={secondaryButtonClass}>
+                    Cancel
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            {familyProfiles.map((profile) => {
+              const profileIcon = getFamilyProfileIcon(profile.icon);
+              return (
+                <div key={profile.id} className="rounded-[12px] border border-[#E5E7EB] bg-white p-4 shadow-[0_4px_16px_rgba(17,17,17,0.05)] transition duration-200 ease-out hover:shadow-[0_10px_28px_rgba(17,17,17,0.08)]">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex items-start gap-3">
+                      <div className="rounded-[10px] bg-[rgba(17,17,17,0.05)] p-2.5 text-[#111111]">
+                        {React.createElement(profileIcon.icon, { size: 16 })}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="break-words text-[16px] font-semibold text-[#111111]">{profile.name}</h3>
+                        <p className="mt-1 text-[12px] font-medium uppercase tracking-[0.12em] text-[#9CA3AF]">{profileIcon.label}</p>
+                        <p className="mt-3 break-words text-[14px] leading-relaxed text-[#6B7280]">
+                          {profile.dietaryRequirements || 'No dietary requirements added.'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button onClick={() => startEditingFamilyProfile(profile)} className={secondaryButtonClass}>Edit</button>
+                      <button onClick={() => removeFamilyProfile(profile.id)} className="rounded-[8px] p-1.5 text-[#6B7280] transition duration-200 ease-out hover:bg-[rgba(17,17,17,0.04)] hover:text-[#111111]">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {familyProfiles.length === 0 ? (
+              <div className="rounded-[12px] border border-dashed border-[#D1D5DB] bg-white px-5 py-8 text-center text-[14px] text-[#6B7280]">
+                No family profiles yet. Add one to store household dietary preferences.
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </Section>
+    </section>
+  );
+
   const savedRecipesContent = (
     <section className={`min-w-0 ${isMobileLayout ? 'space-y-3' : 'space-y-5'} pb-20 pt-2`}>
       <Section title="Saved Recipes" icon={Star} compact={isMobileLayout}>
@@ -1871,6 +2050,7 @@ export default function App() {
             <div className="space-y-2">
               {[
                 { id: 'main', label: 'Main Page', icon: LayoutGrid },
+                { id: 'family', label: 'Family Profiles', icon: Users },
                 { id: 'weekly', label: 'Weekly Planner', icon: Clock },
                 { id: 'grocery', label: 'Grocery List', icon: CheckSquare },
                 { id: 'saved', label: 'Saved Recipes', icon: Star },
@@ -1989,6 +2169,8 @@ export default function App() {
           weeklyPlannerContent
         ) : currentView === 'grocery' ? (
           groceryListContent
+        ) : currentView === 'family' ? (
+          familyProfilesContent
         ) : currentView === 'rules' ? (
           rulesContent
         ) : (
